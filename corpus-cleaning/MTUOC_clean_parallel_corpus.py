@@ -185,6 +185,7 @@ for linia in entrada:
         (lang,logpercent)=langid.classify(slsegment)
         if not args.vSL==lang:
                 toWrite=False
+                print("SOURCE NOT MATCHING:",args.vSL,lang,slsegment)
         
         #try:
         #    sldetect=detect_langs(slsegment)
@@ -201,6 +202,7 @@ for linia in entrada:
         (lang,logpercent)=langid.classify(tlsegment)
         if not args.vTL==lang:
                 toWrite=False
+                print("TARGET NOT MATCHING:",args.vTL,lang,tlsegment)
         #try:
         #    sldetect=detect_langs(tlsegment)
         #    sls=[]
@@ -218,6 +220,7 @@ for linia in entrada:
         (lang,logpercent)=langid.classify(tlsegment)
         if args.vTNOTL==lang:
                 toWrite=False
+                print("TARGET MATCHING:",args.vTNOTL,lang,tlsegment)
         
         #try:
         #    sldetect=detect_langs(tlsegment)
