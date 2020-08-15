@@ -20,22 +20,23 @@ import sys
 from xml.sax.saxutils import unescape
 import html
 import argparse
-#from langdetect import detect
-#from langdetect import detect_langs
-import langid
+from langdetect import detect
+from langdetect import detect_langs
 from bs4 import BeautifulSoup
 import re
 
 
 def remove_tags(segment):
+    #segmentnotags=re.sub('<[^/]+?>', " ",segment)
+    #segmentnotags=re.sub('</.+?>', " ",segmentnotags)
+    #segmentnotags=re.sub('<.+?/>', " ",segmentnotags)
+    #segmentnotags=re.sub('\s+', ' ', segmentnotags).strip()
     segmentnotags=re.sub('<[^>]+>',' ',segment).strip()
     segmentnotags=re.sub(' +', ' ', segmentnotags)
     return(segmentnotags)
 
-def normalize(segment):
+def norm_apos(segment):
     segmentnorm=segment.replace("’","'")
-    segmentnorm=segment.replace("`","'")
-    segmentnorm=segment.replace("‘","'")
     return(segmentnorm)
     
 def remove_empty(SLsegment,TLsegment):
@@ -52,7 +53,7 @@ def remove_short(segment,minimum):
 
 def remove_equal(SLsegment,TLsegment):
     remove=False
-    if SLsegment.strip()==TLsegment.strip(): remove=True
+    if SLsegment.strip()==TLsegment.split(): remove=True
     return(remove)
     
 def unescape_html(segment):
@@ -106,9 +107,8 @@ parser.add_argument('--stringFromFile', action='store', default=False, dest='str
 parser.add_argument('--regexFromFile', action='store', default=False, dest='regexFromFile',help='Removes segments containing strings from the given file (one string for line).')
 parser.add_argument('--vSL', action='store', default=False, dest='vSL',help='Verify language of source language segments.')
 parser.add_argument('--vTL', action='store', default=False, dest='vTL',help='Verify language of source language segments.')
-parser.add_argument('--vSetLanguages', action='store', default=False, dest='vSetLanguages',help='Set the possible languages (separated by ",". For example: en,es,fr,ru,ar,zh.')
 parser.add_argument('--vTNOTL', action='store', default=False, dest='vTNOTL',help='Verify target language not being a given one (to avoid having SL in TL).')
-parser.add_argument('--noUPPER', action='store_true', default=False, dest='noUPPER',help='Deletes the segment if it is uppercased.')
+parser.add_argument('--noUPPER', action='store_true', default=False, dest='noUPPER',help='Deletes the segment is it is uppercased.')
 
 
 args = parser.parse_args()
@@ -138,12 +138,6 @@ if args.regexFromFile:
         lsfile=lsfile.rstrip()
         reglist.append(lsfile)
 
-if args.vSetLanguages:
-    toset=[]
-    for l in args.vSetLanguages.split(","):
-        toset.append(l)
-    langid.set_languages(toset)
-
 for linia in entrada:
     toWrite=True
     linia=linia.strip()
@@ -153,16 +147,12 @@ for linia in entrada:
         tlsegment=""
     if len(camps)>=2:
         tlsegment=camps[1]
-        
-    if args.unescape_html and toWrite:
-        slsegment=unescape_html(slsegment)
-        tlsegment=unescape_html(tlsegment)
     if args.remove_tags and toWrite:
         slsegment=remove_tags(slsegment)
         tlsegment=remove_tags(tlsegment)
     if args.norm_apos and toWrite:
-        slsegment=normalize_apos(slsegment)
-        tlsegment=normalize_apos(tlsegment)
+        slsegment=norm_apos(slsegment)
+        tlsegment=norm_apos(tlsegment)
     if args.remove_empty and toWrite:
         if remove_empty(slsegment,tlsegment): toWrite=False
     if args.remove_short and toWrite:
@@ -172,6 +162,9 @@ for linia in entrada:
         if remove_short(tlsegment,args.remove_short): toWrite=False
     if args.remove_equal and toWrite:
         if remove_equal(slsegment,tlsegment): toWrite=False
+    if args.unescape_html and toWrite:
+        slsegment=unescape_html(slsegment)
+        tlsegment=unescape_html(tlsegment)
     if args.remove_NUMPC and toWrite:
         if percentNUM(slsegment)>=float(args.remove_NUMPC):
             toWrite=False
@@ -181,56 +174,47 @@ for linia in entrada:
         slsegment=escapeforMoses(slsegment)
         tlsegment=escapeforMoses(tlsegment)
     if args.vSL and toWrite:
-        (lang,logpercent)=langid.classify(slsegment)
-        if not args.vSL==lang:
-                toWrite=False
         
-        #try:
-        #    sldetect=detect_langs(slsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
-        #except:
-        #    sls=[]
-        #if not args.vSL in sls:
-        #    print("NO SL MATCHING:",sldetect,slsegment)
-        #    toWrite=False
+        try:
+            sldetect=detect_langs(slsegment)
+            sls=[]
+            for slm in sldetect:
+                camps=str(slm).split(":")
+                sls.append(camps[0])
+        except:
+            sls=[]
+        if not args.vSL in sls:
+            print("NO SL MATCHING:",sldetect,slsegment)
+            toWrite=False
     if args.vTL and toWrite:
-        (lang,logpercent)=langid.classify(tlsegment)
-        if not args.vTL==lang:
-                toWrite=False
-        #try:
-        #    sldetect=detect_langs(tlsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
+        
+        try:
+            sldetect=detect_langs(tlsegment)
+            sls=[]
+            for slm in sldetect:
+                camps=str(slm).split(":")
+                sls.append(camps[0])
             
-        #except:
-        #    sls=[]
-        #if not args.vTL in sls:
-        #    print("NO TL MATCHING:",sldetect,tlsegment)
-        #    toWrite=False
+        except:
+            sls=[]
+        if not args.vTL in sls:
+            print("NO TL MATCHING:",sldetect,tlsegment)
+            toWrite=False
             
     if args.vTNOTL and toWrite:
-        (lang,logpercent)=langid.classify(tlsegment)
-        if args.vTNOTL==lang:
-                toWrite=False
-        
-        #try:
-        #    sldetect=detect_langs(tlsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
-        #    
-        #except:
-        #    sls=[]
-        #if args.vTNOTL in sls:
-        #    print("TL MATCHING:",sldetect,tlsegment)
-        #
-        #    toWrite=False
+        try:
+            sldetect=detect_langs(tlsegment)
+            sls=[]
+            for slm in sldetect:
+                camps=str(slm).split(":")
+                sls.append(camps[0])
+            
+        except:
+            sls=[]
+        if args.vTNOTL in sls:
+            print("TL MATCHING:",sldetect,tlsegment)
+
+            toWrite=False
             
 
 
@@ -265,6 +249,8 @@ for linia in entrada:
                 toWrite=False
                 break
             
+        
+        
     if toWrite:
         cadena=slsegment+"\t"+tlsegment
         sortida.write(cadena+"\n")
