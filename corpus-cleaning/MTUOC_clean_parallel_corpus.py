@@ -20,8 +20,6 @@ import sys
 from xml.sax.saxutils import unescape
 import html
 import argparse
-#from langdetect import detect
-#from langdetect import detect_langs
 import langid
 from bs4 import BeautifulSoup
 import re
@@ -100,17 +98,16 @@ parser.add_argument('--remove_tags', action='store_true', default=False, dest='r
 parser.add_argument('--unescape_html', action='store_true', default=False, dest='unescape_html',help='Unescapes html entities.')
 parser.add_argument('--remove_empty', action='store_true', default=False, dest='remove_empty',help='Removes segments with empty SL or TL segments.')
 parser.add_argument('--remove_short', action='store', default=False, dest='remove_short',help='Removes segments with less than the given number of characters.')
-parser.add_argument('--remove_equal', action='store_true', default=False, dest='remove_equal',help='Removes segments with empty SL or TL segments.')
+parser.add_argument('--remove_equal', action='store_true', default=False, dest='remove_equal',help='Removes segments with equal SL or TL segments.')
 parser.add_argument('--remove_NUMPC', action='store', default=False, dest='remove_NUMPC',help='Removes segments with a percent of numbers higher than the given.')
 parser.add_argument('--escapeforMoses', action='store_true', default=False, dest='escapeforMoses',help='Replaces [ ] and | with entities.')
-parser.add_argument('--stringFromFile', action='store', default=False, dest='stringFromFile',help='Removes segments containing strings from the given file (one string for line).')
-parser.add_argument('--regexFromFile', action='store', default=False, dest='regexFromFile',help='Removes segments containing strings from the given file (one string for line).')
+parser.add_argument('--stringFromFile', action='store', default=False, dest='stringFromFile',help='Removes segments containing strings from the given file (one string per line).')
+parser.add_argument('--regexFromFile', action='store', default=False, dest='regexFromFile',help='Removes segments matching regular expressions from the given file (one regular expression per line).')
 parser.add_argument('--vSL', action='store', default=False, dest='vSL',help='Verify language of source language segments.')
-parser.add_argument('--vTL', action='store', default=False, dest='vTL',help='Verify language of source language segments.')
-parser.add_argument('--vSetLanguages', action='store', default=False, dest='vSetLanguages',help='Set the possible languages (separated by ",". For example: en,es,fr,ru,ar,zh.')
-parser.add_argument('--vTNOTL', action='store', default=False, dest='vTNOTL',help='Verify target language not being a given one (to avoid having SL in TL).')
-parser.add_argument('--noUPPER', action='store_true', default=False, dest='noUPPER',help='Deletes the segment if it is uppercased.')
-
+parser.add_argument('--vTL', action='store', default=False, dest='vTL',help='Verify language of target language segments.')
+parser.add_argument('--vSetLanguages', action='store', default=False, dest='vSetLanguages',help='Set the possible languages (separated by ",". For example: en,es,fr,ru,ar,zh.)')
+parser.add_argument('--vTNOTL', action='store', default=False, dest='vTNOTL',help='Verify target language not being a given one (to avoid having SL in TL, for example).')
+parser.add_argument('--noUPPER', action='store_true', default=False, dest='noUPPER',help='Deletes the segment if it is uppercased (either source or target segment).')
 
 args = parser.parse_args()
 
@@ -186,35 +183,12 @@ for linia in entrada:
         if not args.vSL==lang:
                 toWrite=False
                 print("SOURCE NOT MATCHING:",args.vSL,lang,slsegment)
-        
-        #try:
-        #    sldetect=detect_langs(slsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
-        #except:
-        #    sls=[]
-        #if not args.vSL in sls:
-        #    print("NO SL MATCHING:",sldetect,slsegment)
-        #    toWrite=False
+
     if args.vTL and toWrite:
         (lang,logpercent)=langid.classify(tlsegment)
         if not args.vTL==lang:
                 toWrite=False
                 print("TARGET NOT MATCHING:",args.vTL,lang,tlsegment)
-        #try:
-        #    sldetect=detect_langs(tlsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
-            
-        #except:
-        #    sls=[]
-        #if not args.vTL in sls:
-        #    print("NO TL MATCHING:",sldetect,tlsegment)
-        #    toWrite=False
             
     if args.vTNOTL and toWrite:
         (lang,logpercent)=langid.classify(tlsegment)
@@ -222,21 +196,6 @@ for linia in entrada:
                 toWrite=False
                 print("TARGET MATCHING:",args.vTNOTL,lang,tlsegment)
         
-        #try:
-        #    sldetect=detect_langs(tlsegment)
-        #    sls=[]
-        #    for slm in sldetect:
-        #        camps=str(slm).split(":")
-        #        sls.append(camps[0])
-        #    
-        #except:
-        #    sls=[]
-        #if args.vTNOTL in sls:
-        #    print("TL MATCHING:",sldetect,tlsegment)
-        #
-        #    toWrite=False
-            
-
 
     if args.noUPPER and toWrite:
         if slsegment==slsegment.upper():
@@ -253,24 +212,18 @@ for linia in entrada:
                 break
             if tlsegment.find(rmstring)>-1:
                 toWrite=False
- 
                 break
-                
-                
                 
     if args.regexFromFile and toWrite:
         for regex in reglist:
             pattern = re.compile(regex)
-            
             if pattern.search(slsegment):
                 toWrite=False
                 break
             if pattern.search(tlsegment):
                 toWrite=False
                 break
-            
     if toWrite:
         cadena=slsegment+"\t"+tlsegment
         sortida.write(cadena+"\n")
         
-    
