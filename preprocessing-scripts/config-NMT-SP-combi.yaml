@@ -6,6 +6,9 @@ ROOTNAME_GEN: corpusGEN
 SL: en
 TL: es
 
+#VERBOSE
+VERBOSE: True
+
 #TOKENIZATION
 TOKENIZE_SL: True
 SL_TOKENIZER: MTUOC_tokenizer_eng
@@ -38,12 +41,14 @@ leval: 1000
 #GUIDED ALIGNMENT
 #TRAIN CORPUS
 GUIDED_ALIGNMENT: True
-ALIGNER: "eflomal"
+ALIGNER: eflomal
 #one of eflomal, fast_align
 BOTH_DIRECTIONS: True 
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING: True
 DELETE_TEMP: True
+SPLIT_LIMIT: 10000
+#For efomal, max number of segments to align at a time
 
 #VALID CORPUS
 GUIDED_ALIGNMENT_VALID: True

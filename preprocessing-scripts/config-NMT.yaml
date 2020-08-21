@@ -1,9 +1,13 @@
+#MTUOC's scripts directory
+MTUOC: /MTUOC
+
 ROOTNAME: corpus
 SL: en
 TL: es
 
-#MTUOC's scripts directory
-MTUOC: /MTUOC
+VERBOSE: True
+
+
 
 #TOKENIZATION
 TOKENIZE_SL: True
@@ -18,9 +22,9 @@ CLEAN_MAX_TOK: 80
 
 #TRUECASING
 LEARN_TRUECASER_SL: True
-SLDICT: /MTUOC3/eng.dict
+SLDICT: /MTUOC/eng.dict
 LEARN_TRUECASER_TL: True
-TLDICT: /MTUOC3/spa.dict
+TLDICT: /MTUOC/spa.dict
 TRUECASE_SL: True
 TRUECASE_TL: True
 
@@ -53,6 +57,8 @@ BOTH_DIRECTIONS: True
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING: True
 DELETE_TEMP: True
+SPLIT_LIMIT: 10000
+
 
 #GUIDED ALIGNMENT
 #VALID CORPUS

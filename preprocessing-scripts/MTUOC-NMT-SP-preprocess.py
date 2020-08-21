@@ -1,3 +1,19 @@
+#    MTUOC-NMT-SP-preprocess
+#    Copyright (C) 2020  Antoni Oliver
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import pyonmttok
 import sys
 import importlib
@@ -5,6 +21,10 @@ from importlib import import_module
 import codecs
 import os
 import subprocess
+from datetime import datetime
+import re
+from shutil import copyfile
+
 
 ###YAML IMPORTS
 import yaml
@@ -14,10 +34,14 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
     
-    
+def file_len(fname):
+    num_lines = sum(1 for line in open(fname))
+    return(num_lines)
+
 stream = open('config-NMT-SP.yaml', 'r',encoding="utf-8")
 config=yaml.load(stream, Loader=yaml.FullLoader)
 
+VERBOSE=config["VERBOSE"]
 
 MTUOC=config["MTUOC"]
 sys.path.append(MTUOC)
@@ -71,15 +95,9 @@ BOTH_DIRECTIONS_VALID=config["BOTH_DIRECTIONS"]
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING_VALID=config["DELETE_EXISTING"]
 DELETE_TEMP_VALID=config["DELETE_TEMP"]
+SPLIT_LIMIT=int(config["SPLIT_LIMIT"])
 
 sys.path.append(MTUOC)
-
-
-
-    
-def file_len(fname):
-    num_lines = sum(1 for line in open(fname))
-    return(num_lines)
 
 tokenizerASL=importlib.import_module(SL_TOKENIZER)
 tokenizerATL=importlib.import_module(TL_TOKENIZER)
@@ -96,6 +114,13 @@ learnerTL = pyonmttok.SentencePieceLearner(vocab_size=VOCAB_SIZE, character_cove
 filename=ROOTNAME+"."+SL
 entrada=codecs.open(filename,"r",encoding="utf-8")
 
+if VERBOSE:
+    print("Start of process",datetime.now())
+
+if VERBOSE:
+    print("LEARNING SENTENCEPIECE")
+    print("SL: tokenizing and ingesting",datetime.now())
+
 for linia in entrada:
     linia=linia.strip()
     if TOKENIZE_SL:
@@ -108,6 +133,9 @@ for linia in entrada:
 
 filename=ROOTNAME+"."+TL
 entrada=codecs.open(filename,"r",encoding="utf-8")
+
+if VERBOSE:
+    print("TL: tokenizing and ingesting",datetime.now())
 
 for linia in entrada:
     linia=linia.strip()
@@ -131,20 +159,18 @@ else:
 
 filenameSL=ROOTNAME+"."+SL
 entradaSL=codecs.open(filenameSL,"r",encoding="utf-8")
-filenameSL=ROOTNAME+".sp."+SL
+filenameSL=ROOTNAME+".clean."+SL
 sortidaSL=codecs.open(filenameSL,"w",encoding="utf-8")
-filenameSLTEMP="corpustemp."+SL
 sortidaSL=codecs.open(filenameSL,"w",encoding="utf-8")
-sortidaSLTEMP=codecs.open(filenameSLTEMP,"w",encoding="utf-8")
 
 
 filenameTL=ROOTNAME+"."+TL
 entradaTL=codecs.open(filenameTL,"r",encoding="utf-8")
-filenameTL=ROOTNAME+".sp."+TL
-filenameTLTEMP="corpustemp."+TL
+filenameTL=ROOTNAME+".clean."+TL
 sortidaTL=codecs.open(filenameTL,"w",encoding="utf-8")
-sortidaTLTEMP=codecs.open(filenameTLTEMP,"w",encoding="utf-8")
 
+if VERBOSE:
+    print("Tokenizing and cleaning SL and TL corpora",datetime.now())
 
 while 1:
     liniaSL=entradaSL.readline()
@@ -162,147 +188,169 @@ while 1:
     else:
         toclean=cleaner.clean(liniapSL,liniapTL,CLEAN_MIN_TOK,CLEAN_MAX_TOK)
     if not toclean:
-        output="<s> "+tokenizerASL.unprotect(" ".join(tokenizerSL.tokenize(liniapSL)[0]))+" </s>"
-        sortidaSL.write(output+"\n")
-        sortidaSLTEMP.write(liniaSL)
-        output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniapTL)[0]))+" </s>"
-        sortidaTL.write(output+"\n")
-        sortidaSLTEMP.write(liniaTL)
+        sortidaSL.write(liniaSL+"\n")
+        sortidaTL.write(liniaTL+"\n")
+
+
 if SPLIT_CORPUS:
-    print("SPLITTING CORPUS")
-    NUMOFLINES=file_len("corpustemp."+SL)
-    NLTRAIN=NUMOFLINES - lval -leval
-    parameters=["train."+SL,NLTRAIN,"val."+SL,lval,"eval."+SL,leval]
-    split_corpus("corpustemp."+SL,parameters)
-    parameters=["train."+TL,NLTRAIN,"val."+TL,lval,"eval."+TL,leval]
-    split_corpus("corpustemp."+TL,parameters)
+    if VERBOSE:
+        print("SPLITTING CORPUS",datetime.now())
     
-    NUMOFLINES=file_len(ROOTNAME+".sp."+SL)
+    NUMOFLINES=file_len(ROOTNAME+".clean."+SL)
     NLTRAIN=NUMOFLINES - lval -leval
-    parameters=["train.sp."+SL,NLTRAIN,"val.sp."+SL,lval,"eval.sp."+SL,leval]
-    split_corpus(ROOTNAME+".sp."+SL,parameters)
-    parameters=["train.sp."+TL,NLTRAIN,"val.sp."+TL,lval,"eval.sp."+TL,leval]
-    split_corpus(ROOTNAME+".sp."+TL,parameters)
+    parameters=["train.clean."+SL,NLTRAIN,"val.clean."+SL,lval,"eval.clean."+SL,leval]
+    split_corpus(ROOTNAME+".clean."+SL,parameters)
+    parameters=["train.clean."+TL,NLTRAIN,"val.clean."+TL,lval,"eval.clean."+TL,leval]
+    split_corpus(ROOTNAME+".clean."+TL,parameters)
+
+    
+    if VERBOSE:
+        print("SentencePiece train SL",datetime.now())
+    
+    filename="train.clean."+SL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="train.sp."+SL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerASL.protect(linia)
+        output="<s> "+tokenizerASL.unprotect(" ".join(tokenizerSL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")
+
+        
+    filename="train.clean."+TL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="train.sp."+TL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    if VERBOSE:
+        print("SentencePiece train TL",datetime.now())
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerATL.protect(linia)
+        output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")
+
+    if VERBOSE:
+        print("SentencePiece val SL",datetime.now())
+    
+    filename="val.clean."+SL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="val.sp."+SL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerASL.protect(linia)
+        output="<s> "+tokenizerASL.unprotect(" ".join(tokenizerSL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")
+
+        
+    filename="val.clean."+TL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="val.sp."+TL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    if VERBOSE:
+        print("SentencePiece val TL",datetime.now())
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerATL.protect(linia)
+        output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")    
+
+    if VERBOSE:
+        print("SentencePiece eval SL",datetime.now())
+    
+    filename="eval.clean."+SL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="eval.sp."+SL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerASL.protect(linia)
+        output="<s> "+tokenizerASL.unprotect(" ".join(tokenizerSL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")
+
+        
+    filename="eval.clean."+TL
+    entrada=codecs.open(filename,"r",encoding="utf-8")
+    filename="eval.sp."+TL
+    sortida=codecs.open(filename,"w",encoding="utf-8")
+
+    if VERBOSE:
+        print("SentencePiece eval TL",datetime.now())
+
+    for linia in entrada:
+        linia=linia.strip()
+        liniap=tokenizerATL.protect(linia)
+        output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
+        sortida.write(output+"\n")  
+
+copyfile("train.clean."+SL, "train."+SL)
+copyfile("train.clean."+TL, "train."+TL)
+
+copyfile("val.clean."+SL, "val."+SL)
+copyfile("val.clean."+TL, "val."+TL)
+
+copyfile("eval.clean."+SL, "eval."+SL)
+copyfile("eval.clean."+TL, "eval."+TL)
+
+os.remove("train.clean."+SL)
+os.remove("train.clean."+TL)
+
+os.remove("val.clean."+SL)
+os.remove("val.clean."+TL)
+
+os.remove("eval.clean."+SL)
+os.remove("eval.clean."+TL)
+
 
 if GUIDED_ALIGNMENT:
-    print("GUIDED ALIGNMENT")
+    if VERBOSE:
+        print("GUIDED ALIGNMENT TRAINING",datetime.now())
     if DELETE_EXISTING:
-        FILE=ROOTNAME_ALI+"."+SL+"."+TL+".align" 
+        FILE="train.sp."+SL+"."+SL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)
-        FILE=ROOTNAME_ALI+"."+TL+"."+SL+".align" 
+        FILE="train.sp."+TL+"."+TL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)            
-    FILE1=ROOTNAME_ALI+"."+SL
-    FILE2=ROOTNAME_ALI+"."+TL
-    FILEOUT="corpus."+SL+"."+TL+"."+"fa"
-    command="paste "+FILE1+" "+FILE2+" | sed 's/\t/ ||| /g' > "+FILEOUT
-    print("Running command: ",command)
-    os.system(command)
-    
     if ALIGNER=="fast_align":
-        command=MTUOC+"/fast_align -vdo -i corpus."+SL+"."+TL+".fa > forward."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
-        command=MTUOC+"/fast_align -vdor -i corpus."+SL+"."+TL+".fa > reverse."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
-        command=MTUOC+"/atools -c grow-diag-final -i forward."+SL+"."+TL+".align -j reverse."+SL+"."+TL+".align > "+ROOTNAME_ALI+"."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
-        
-        if BOTH_DIRECTIONS:
-            FILE1=ROOTNAME_ALI+"."+SL
-            FILE2=ROOTNAME_ALI+"."+TL
-            FILEOUT="corpus."+TL+"."+SL+"."+"fa"
-            command="paste "+FILE2+" "+FILE1+" | sed 's/\t/ ||| /g' > "+FILEOUT
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/fast_align -vdo -i corpus."+TL+"."+SL+".fa > forward."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/fast_align -vdor -i corpus."+TL+"."+SL+".fa > reverse."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/atools -c grow-diag-final -i forward."+TL+"."+SL+".align -j reverse."+TL+"."+SL+".align > "+ROOTNAME_ALI+"."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
+        sys.path.append(MTUOC)
+        from MTUOC_guided_alignment_fast_align import guided_alignment_fast_align
+        guided_alignment_fast_align(MTUOC,"train.sp","train.sp",SL,TL,BOTH_DIRECTIONS,VERBOSE)
         
     if ALIGNER=="eflomal":
-        command=MTUOC+"/eflomal-align.py -i corpus."+SL+"."+TL+".fa --model 3 -f "+ROOTNAME_ALI+"."+SL+"."+TL+".align -r "+ROOTNAME_ALI+"."+TL+"."+SL+".align"
-        print("Running command: ",command)
-        os.system(command)
-    if DELETE_TEMP:
-        FILE="corpus."+SL+"."+TL+".fa" 
-        if os.path.exists(FILE):
-            os.remove(FILE)
-        if ALIGNER=="fast_align":
-            FILE="forward."+SL+"."+TL+".align" 
-            if os.path.exists(FILE):
-                os.remove(FILE)
-            FILE="forward."+TL+"."+SL+".align" 
-            if os.path.exists(FILE):
-                os.remove(FILE)
+        sys.path.append(MTUOC)
+        from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
+        guided_alignment_eflomal(MTUOC,"train.sp","train.sp",SL,TL,SPLIT_LIMIT,VERBOSE)
+
 
 
 if GUIDED_ALIGNMENT_VALID:
-    print("GUIDED ALIGNMENT VALIDATION CORPUS")
-    print("Using aligner:", ALIGNER_VALID)
-    if DELETE_EXISTING_VALID:
-        FILE=ROOTNAME_ALI_VALID+"."+SL+"."+TL+".align" 
+    if VERBOSE:
+        print("GUIDED ALIGNMENT TRAINING",datetime.now())
+    if DELETE_EXISTING:
+        FILE="val.sp."+SL+"."+SL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)
-        FILE=ROOTNAME_ALI_VALID+"."+TL+"."+SL+".align" 
+        FILE="val.sp."+TL+"."+TL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)            
-    FILE1=ROOTNAME_ALI_VALID+"."+SL
-    FILE2=ROOTNAME_ALI_VALID+"."+TL
-    FILEOUT="corpus."+SL+"."+TL+".fa"
-    command="paste "+FILE1+" "+FILE2+" | sed 's/\\t/ ||| /g' > "+FILEOUT
-    print("Running command: ",command)
-    os.system(command)
-    
-    if ALIGNER_VALID=="fast_align":
-        command=MTUOC+"/fast_align -vdo -i corpus."+SL+"."+TL+".fa > forward."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
-        command=MTUOC+"/fast_align -vdor -i corpus."+SL+"."+TL+".fa > reverse."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
-        command=MTUOC+"/atools -c grow-diag-final -i forward."+SL+"."+TL+".align -j reverse."+SL+"."+TL+".align > "+ROOTNAME_ALI_VALID+"."+SL+"."+TL+".align"
-        print("Running command: ",command)
-        os.system(command)
+    if ALIGNER=="fast_align":
+        sys.path.append(MTUOC)
+        from MTUOC_guided_alignment_fast_align import guided_alignment_fast_align
+        guided_alignment_fast_align(MTUOC,"val.sp","val.sp",SL,TL,BOTH_DIRECTIONS,VERBOSE)
         
-        if BOTH_DIRECTIONS_VALID:
-            FILE1=ROOTNAME_ALI_VALID+"."+SL
-            FILE2=ROOTNAME_ALI_VALID+"."+TL
-            FILEOUT="corpus."+TL+"."+SL+"."+"fa"
-            command="paste "+FILE2+" "+FILE1+" | sed 's/\t/ ||| /g' > "+FILEOUT
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/fast_align -vdo -i corpus."+TL+"."+SL+".fa > forward."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/fast_align -vdor -i corpus."+TL+"."+SL+".fa > reverse."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
-            command=MTUOC+"/atools -c grow-diag-final -i forward."+TL+"."+SL+".align -j reverse."+TL+"."+SL+".align > "+ROOTNAME_ALI_VALID+"."+TL+"."+SL+".align"
-            print("Running command: ",command)
-            os.system(command)
-        
-    if ALIGNER_VALID=="eflomal":
-        command=MTUOC+"/eflomal-align.py -i corpus."+SL+"."+TL+".fa --model 3 -f "+ROOTNAME_ALI_VALID+"."+SL+"."+TL+".align -r "+ROOTNAME_ALI_VALID+"."+TL+"."+SL+".align"
-        print("Running command: ",command)
-        os.system(command)
-    if DELETE_TEMP_VALID:
-        FILE="corpus."+SL+"."+TL+".fa" 
-        if os.path.exists(FILE):
-            os.remove(FILE)
-        if ALIGNER=="fast_align":
-            FILE="forward."+SL+"."+TL+".align" 
-            if os.path.exists(FILE):
-                os.remove(FILE)
-            FILE="forward."+TL+"."+SL+".align" 
-            if os.path.exists(FILE):
-                os.remove(FILE)
+    if ALIGNER=="eflomal":
+        sys.path.append(MTUOC)
+        from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
+        guided_alignment_eflomal(MTUOC,"val.sp","val.sp",SL,TL,SPLIT_LIMIT,VERBOSE)
 
+if VERBOSE:
+    print("End of process",datetime.now())

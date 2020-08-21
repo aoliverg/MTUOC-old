@@ -7,6 +7,8 @@ ROOTNAME_GEN: corpusGEN
 SL: en
 TL: es
 
+VERBOSE: True
+
 #TOKENIZATION
 TOKENIZE_SL: True
 SLTOKENIZER: MTUOC_tokenizer_eng
@@ -23,9 +25,9 @@ SELECTED_SEGMENTS: 5000000
 
 #TRUECASING
 LEARN_TRUECASER_SL: True
-SLDICT: /MTUOC3/eng.dict
+SLDICT: /MTUOC/eng.dict
 LEARN_TRUECASER_TL: True
-TLDICT: /MTUOC3/spa.dict
+TLDICT: /MTUOC/spa.dict
 TRUECASE_SL: True
 TRUECASE_TL: True
 
@@ -53,7 +55,7 @@ BPE_DROPOUT_P: 0.1
 #GUIDED ALIGNMENT
 #TRAIN CORPUS
 GUIDED_ALIGNMENT: True
-ALIGNER: "eflomal"
+ALIGNER: eflomal
 #one of eflomal, fast_align
 BOTH_DIRECTIONS: True 
 #only for fast_align, eflomal aligns always the two directions at the same time
@@ -69,3 +71,5 @@ BOTH_DIRECTIONS_VALID: True
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING_VALID: True
 DELETE_TEMP_VALID: True
+SPLIT_LIMIT: 10000
+
