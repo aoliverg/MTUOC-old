@@ -74,7 +74,6 @@ def tokenize_mn(segment):
     segment=protect(segment)
     tokens, features = tokenizer.tokenize(segment)
     tokenized=" ".join(tokens)       
-    print(tokenized)
     unprotected=unprotect(tokenized)
     return(unprotected) 
     

@@ -49,70 +49,73 @@ def truecase(tc_model,line):
         nsegment=[]
         cont=0
         for token in tokens:
-            has_joiner=False
-            if token.startswith("￭"):
-                has_joiner=True
-                token=token.replace("￭","")
-            if token.isalpha():
-                cont+=1
-            if token.lower() in tc_model and "lc" in tc_model[token.lower()] and "u1" in tc_model[token.lower()]:
-                nlc=tc_model[token.lower()]["lc"]
-                nu1=tc_model[token.lower()]["u1"]
-                if token in tc_model[token.lower()]:
-                    nasis=tc_model[token.lower()][token]
+            try:
+                has_joiner=False
+                if token.startswith("￭"):
+                    has_joiner=True
+                    token=token.replace("￭","")
+                if token.isalpha():
+                    cont+=1
+                if token.lower() in tc_model and "lc" in tc_model[token.lower()] and "u1" in tc_model[token.lower()]:
+                    nlc=tc_model[token.lower()]["lc"]
+                    nu1=tc_model[token.lower()]["u1"]
+                    if token in tc_model[token.lower()]:
+                        nasis=tc_model[token.lower()][token]
+                    else:
+                        nasis=0
                 else:
-                    nasis=0
-            else:
-                nlc=1
-                nu1=0
-                nasis=1
+                    nlc=1
+                    nu1=0
+                    nasis=1
 
-            if cont==1:
-                #is the first token in the sentence
-                if nasis >= nlc and nasis >= nu1:
-                    if has_joiner:
-                        nsegment.append("￭"+token)
-                    else:
-                        nsegment.append(token)
-                elif nlc >= nu1:                    
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower())
+                if cont==1:
+                    #is the first token in the sentence
+                    if nasis >= nlc and nasis >= nu1:
+                        if has_joiner:
+                            nsegment.append("￭"+token)
+                        else:
+                            nsegment.append(token)
+                    elif nlc >= nu1:                    
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower())
+                        else:
+                            nsegment.append(token.lower())
+                    elif nu1 >= nlc:                    
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower().capitalize())
+                        else:
+                            nsegment.append(token.lower().capitalize())
                     else:
                         nsegment.append(token.lower())
-                elif nu1 >= nlc:                    
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower().capitalize())
-                    else:
-                        nsegment.append(token.lower().capitalize())
+                        
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower())
+                        else:
+                            nsegment.append(token.lower())
                 else:
-                    nsegment.append(token.lower())
-                    
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower())
+                    #the rest of the tokens in the sentence
+                    if nasis >= nlc and nasis >= nu1:
+                        if has_joiner:
+                            nsegment.append("￭"+token)
+                        else:
+                            nsegment.append(token)
+                    elif nlc >= nu1:
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower())
+                        else:
+                            nsegment.append(token.lower())
+                    elif nu1 >= nasis:
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower().capitalize())
+                        else:
+                            nsegment.append(token.lower().capitalize())
                     else:
-                        nsegment.append(token.lower())
-            else:
-                #the rest of the tokens in the sentence
-                if nasis >= nlc and nasis >= nu1:
-                    if has_joiner:
-                        nsegment.append("￭"+token)
-                    else:
-                        nsegment.append(token)
-                elif nlc >= nu1:
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower())
-                    else:
-                        nsegment.append(token.lower())
-                elif nu1 >= nasis:
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower().capitalize())
-                    else:
-                        nsegment.append(token.lower().capitalize())
-                else:
-                    if has_joiner:
-                        nsegment.append("￭"+token.lower())
-                    else:
-                        nsegment.append(token.lower())
+                        if has_joiner:
+                            nsegment.append("￭"+token.lower())
+                        else:
+                            nsegment.append(token.lower())
+            except:
+                nsegment.append(token)
                     
         return(" ".join(nsegment))
 

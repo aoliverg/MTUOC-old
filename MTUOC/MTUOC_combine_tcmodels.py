@@ -21,7 +21,7 @@ import pickle
 arguments=sys.argv
 
 if len(arguments)==1 or arguments[1]=="-h" or arguments[1]=="-h" or arguments[1]=="--help":
-    print("MTUOC_combine_tcmodels: a programm to combine MTUOC truecasing models.")
+    print("MTUOC_combine_tcmodels: a program to combine MTUOC truecasing models.")
     print("Usage: if you want to combine tc1.ll tc2.ll tc3.ll into tc.ll write:")
     print("python MTUOC_combine_tcmodels.py tc1.ll tc2.ll tc3.ll tc.ll")
     print("You can combine any number of models, the last one being the resulting model")
