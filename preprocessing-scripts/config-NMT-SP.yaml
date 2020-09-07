@@ -43,7 +43,7 @@ BOTH_DIRECTIONS: True
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING: True
 DELETE_TEMP: True
-SPLIT_LIMIT: 10000
+SPLIT_LIMIT: 1000000
 #For efomal, max number of segments to align at a time
 
 #VALID CORPUS

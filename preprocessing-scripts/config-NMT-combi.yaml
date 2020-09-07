@@ -71,5 +71,5 @@ BOTH_DIRECTIONS_VALID: True
 #only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING_VALID: True
 DELETE_TEMP_VALID: True
-SPLIT_LIMIT: 10000
+SPLIT_LIMIT: 1000000
 

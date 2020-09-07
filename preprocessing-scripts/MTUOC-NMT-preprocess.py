@@ -144,8 +144,8 @@ if LEARN_TRUECASER_SL:
         tokens=tokenizerSL.tokenize(linia)
         sortidaTMP.write(tokens+"\n")
     truecaserlearner.train_truecaser(truecasemodel,"traintruecaser.temp",SLDICT)
-    os.remove("traintruecaser.temp")
-    print("End of traning SL truecaser")
+    if os.path.exists("traintruecaser.temp"): os.remove("traintruecaser.temp")
+    if VERBOSE: print("End of traning SL truecaser")
 
 
 if LEARN_TRUECASER_TL:
@@ -163,8 +163,8 @@ if LEARN_TRUECASER_TL:
         tokens=tokenizerTL.tokenize(linia)
         sortidaTMP.write(tokens+"\n")
     truecaserlearner.train_truecaser(truecasemodel,"traintruecaser.temp",TLDICT)
-    os.remove("traintruecaser.temp")
-    print("End of traning TL truecaser")
+    if os.path.exists("traintruecaser.temp"): os.remove("traintruecaser.temp")
+    if VERBOSE: print("End of traning TL truecaser")
     
 
 filenameSL=ROOTNAME+"."+SL
@@ -207,7 +207,7 @@ if VERBOSE:
     print("Splitting corpora",datetime.now())
         
 if SPLIT_CORPUS:
-    print("SPLITTING CORPUS")
+    if VERBOSE: print("SPLITTING CORPUS")
     NUMOFLINES=file_len("corpusSL.temp")
     NLTRAIN=NUMOFLINES - lval -leval
     parameters=["train."+SL,NLTRAIN,"val."+SL,lval,"eval."+SL,leval]
@@ -352,16 +352,16 @@ if LEARN_BPE:
     if VERBOSE:
         print("Learning BPE",datetime.now())
     if JOIN_LANGUAGES: 
-        print("JOINING LANGUAGES")
+        if VERBOSE: print("JOINING LANGUAGES")
         command="subword-nmt learn-joint-bpe-and-vocab --input "+"train.pre."+SL+" train.pre."+TL+" -s "+str(NUM_OPERATIONS)+" -o codes_file --write-vocabulary vocab_BPE."+SL+" vocab_BPE."+TL
         os.system(command)
     else:
         if PROCESS_SL:
-            print("SL")
+            if VERBOSE: print("SL")
             command="subword-nmt learn-joint-bpe-and-vocab --input "+"train.pre."+SL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+SL+" --write-vocabulary vocab_BPE."+SL
             os.system(command)
         if PROCESS_TL:
-            print("TL")
+            if VERBOSE: print("TL")
             command="subword-nmt learn-joint-bpe-and-vocab --input "+"train.pre."+TL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+TL+" --write-vocabulary vocab_BPE."+TL
             os.system(command)
 
@@ -376,47 +376,47 @@ if APPLY_BPE:
         BPESL="codes_file."+SL
         BPETL="codes_file."+TL
     if not BPE_DROPOUT:
-        print("NO BPE DROPOUT")
-        print("SL using ",BPESL)
+        if VERBOSE: print("NO BPE DROPOUT")
+        if VERBOSE: print("SL using ",BPESL)
         #train
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"train.pre."+SL+" > train.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"train.pre."+TL+" > train.bpe.temp."+TL
         os.system(command)
         #val
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"val.pre."+SL+" > val.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"val.pre."+TL+" > val.bpe.temp."+TL
         os.system(command)
         #eval
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"eval.pre."+SL+" > eval.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" < "+"eval.pre."+TL+" > eval.bpe.temp."+TL
         os.system(command)
         
         
     if BPE_DROPOUT:
-        print("BPE DROPOUT")
-        print("SL using ",BPESL)
+        if VERBOSE: print("BPE DROPOUT")
+        if VERBOSE: print("SL using ",BPESL)
         #train
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"train.pre."+SL+" > train.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"train.pre."+TL+" > train.bpe.temp."+TL
         os.system(command)
         #val
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"val.pre."+SL+" > val.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"val.pre."+TL+" > val.bpe.temp."+TL
         os.system(command)
         #eval
         command="subword-nmt apply-bpe -c "+BPESL+" --vocabulary vocab_BPE."+SL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"eval.pre."+SL+" > eval.bpe.temp."+SL
         os.system(command)
-        print("TL using",BPETL)
+        if VERBOSE: print("TL using",BPETL)
         command="subword-nmt apply-bpe -c "+BPETL+" --vocabulary vocab_BPE."+TL+" --vocabulary-threshold "+str(VOCABULARY_THRESHOLD)+" --dropout "+str(BPE_DROPOUT_P)+" < "+"eval.pre."+TL+" > eval.bpe.temp."+TL
         os.system(command)
         
@@ -473,12 +473,12 @@ if APPLY_BPE:
     entradaBPETEMPTL.close()
     sortidaBPETL.close()
     
-    os.remove("train.bpe.temp."+SL)
-    os.remove("train.bpe.temp."+TL)
-    os.remove("val.bpe.temp."+SL)
-    os.remove("val.bpe.temp."+TL)
-    os.remove("eval.bpe.temp."+SL)
-    os.remove("eval.bpe.temp."+TL)
+    if os.path.exists("train.bpe.temp."+SL): os.remove("train.bpe.temp."+SL)
+    if os.path.exists("train.bpe.temp."+TL): os.remove("train.bpe.temp."+TL)
+    if os.path.exists("val.bpe.temp."+SL): os.remove("val.bpe.temp."+SL)
+    if os.path.exists("val.bpe.temp."+TL): os.remove("val.bpe.temp."+TL)
+    if os.path.exists("eval.bpe.temp."+SL): os.remove("eval.bpe.temp."+SL)
+    if os.path.exists("eval.bpe.temp."+TL): os.remove("eval.bpe.temp."+TL)
         
 
 

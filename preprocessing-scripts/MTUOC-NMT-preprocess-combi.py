@@ -240,7 +240,7 @@ if LEARN_TRUECASER_SL:
         tokens=tokenizerSL.tokenize(linia)
         sortidaTMP.write(tokens+"\n")
     truecaserlearner.train_truecaser(truecasemodel,"traintruecaser.temp",SLDICT)
-    os.remove("traintruecaser.temp")
+    if os.path.exists("traintruecaser.temp"): os.remove("traintruecaser.temp")
     print("End of traning SL truecaser")
     
 if LEARN_TRUECASER_TL:
@@ -258,7 +258,7 @@ if LEARN_TRUECASER_TL:
         tokens=tokenizerTL.tokenize(linia)
         sortidaTMP.write(tokens+"\n")
     truecaserlearner.train_truecaser(truecasemodel,"traintruecaser.temp",TLDICT)
-    os.remove("traintruecaser.temp")
+    if os.path.exists("traintruecaser.temp"): os.remove("traintruecaser.temp")
     print("End of traning TL truecaser")
     
 #TRUECASE train_COMBI val_SPE eval_SPE
@@ -516,12 +516,12 @@ if APPLY_BPE:
     entradaBPETEMPTL.close()
     sortidaBPETL.close()
     
-    os.remove("train.bpe.temp."+SL)
-    os.remove("train.bpe.temp."+TL)
-    os.remove("val.bpe.temp."+SL)
-    os.remove("val.bpe.temp."+TL)
-    os.remove("eval.bpe.temp."+SL)
-    os.remove("eval.bpe.temp."+TL)
+    if os.path.exists("train.bpe.temp."+SL): os.remove("train.bpe.temp."+SL)
+    if os.path.exists("train.bpe.temp."+TL): os.remove("train.bpe.temp."+TL)
+    if os.path.exists("val.bpe.temp."+SL): os.remove("val.bpe.temp."+SL)
+    if os.path.exists("val.bpe.temp."+TL): os.remove("val.bpe.temp."+TL)
+    if os.path.exists("eval.bpe.temp."+SL): os.remove("eval.bpe.temp."+SL)
+    if os.path.exists("eval.bpe.temp."+TL): os.remove("eval.bpe.temp."+TL)
         
             
 if GUIDED_ALIGNMENT:
@@ -590,12 +590,12 @@ if GUIDED_ALIGNMENT_VALID:
             guided_alignment_eflomal(MTUOC,"val_SPE","val_SPE",SL,TL,SPLIT_LIMIT,VERBOSE)
 
 
-os.remove("corpus_gen_clean.en")
-os.remove("corpus_gen_clean.es")
-os.remove("corpus_spe_clean.en")
-os.remove("corpus_spe_clean.es")
-os.remove("genselected.en")
-os.remove("genselected.es")
+if os.path.exists("corpus_gen_clean.en"): os.remove("corpus_gen_clean.en")
+if os.path.exists("corpus_gen_clean.es"): os.remove("corpus_gen_clean.es")
+if os.path.exists("corpus_spe_clean.en"): os.remove("corpus_spe_clean.en")
+if os.path.exists("corpus_spe_clean.es"): os.remove("corpus_spe_clean.es")
+if os.path.exists("genselected.en"): os.remove("genselected.en")
+if os.path.exists("genselected.es"): os.remove("genselected.es")
 
 
 if VERBOSE:

@@ -291,23 +291,23 @@ if SPLIT_CORPUS:
         output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
         sortida.write(output+"\n")  
 
-copyfile("train.clean."+SL, "train."+SL)
-copyfile("train.clean."+TL, "train."+TL)
+if os.path.exists("train.clean."+SL): copyfile("train.clean."+SL, "train."+SL)
+if os.path.exists("train.clean."+TL): copyfile("train.clean."+TL, "train."+TL)
 
-copyfile("val.clean."+SL, "val."+SL)
-copyfile("val.clean."+TL, "val."+TL)
+if os.path.exists("val.clean."+SL): copyfile("val.clean."+SL, "val."+SL)
+if os.path.exists("val.clean."+TL): copyfile("val.clean."+TL, "val."+TL)
 
-copyfile("eval.clean."+SL, "eval."+SL)
-copyfile("eval.clean."+TL, "eval."+TL)
+if os.path.exists("eval.clean."+SL): copyfile("eval.clean."+SL, "eval."+SL)
+if os.path.exists("eval.clean."+TL): copyfile("eval.clean."+TL, "eval."+TL)
 
-os.remove("train.clean."+SL)
-os.remove("train.clean."+TL)
+if os.path.exists("train.clean."+SL): os.remove("train.clean."+SL)
+if os.path.exists("train.clean."+TL): os.remove("train.clean."+TL)
 
-os.remove("val.clean."+SL)
-os.remove("val.clean."+TL)
+if os.path.exists("val.clean."+SL): os.remove("val.clean."+SL)
+if os.path.exists("val.clean."+TL): os.remove("val.clean."+TL)
 
-os.remove("eval.clean."+SL)
-os.remove("eval.clean."+TL)
+if os.path.exists("eval.clean."+SL): os.remove("eval.clean."+SL)
+if os.path.exists("eval.clean."+TL): os.remove("eval.clean."+TL)
 
 
 if GUIDED_ALIGNMENT:
