@@ -18,15 +18,20 @@ import pyonmttok
 import sys
 import html
 import re
+import re
 
 subs=["d'￭","￭'en","￭'hi","￭'ho","￭'l","l'￭","￭'ls","￭'m","m'￭","￭'n","n'￭","￭'ns","￭'s","s'￭","￭'t","t'￭","￭-el","￭-els","￭-em","￭-en","￭-ens","￭-hi","￭-ho","￭-l","￭-la","￭-les","￭-li","￭-lo","￭-los","￭-m","￭-me","￭-n","￭-ne","￭-nos","￭-s","￭-se","￭-te","￭-t","￭-us","￭-vos"]
 sorted_subs = sorted(subs, key=len, reverse=True)
 subs=sorted_subs
 
 expgeminada=re.compile(r'[\w]+·[\w]+')
-    
+
+def protect_tags(segment):
+    protectedsegment=re.sub(r'(<[^>]+>)', r'｟\1｠',segment)
+    return(protectedsegment)    
 
 def protect(segment):
+    segment=protect_tags(segment)
     match=expgeminada.findall(segment)
     for m in match:
         replace="｟"+m+"｠"

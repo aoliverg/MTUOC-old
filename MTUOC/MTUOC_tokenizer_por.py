@@ -17,12 +17,18 @@
 import pyonmttok
 import sys
 import html
+import re
 
 subs=['fá￭-￭la', 'fá￭-￭las', 'fá￭-￭lo', 'fá￭-￭los', 'fê￭-￭la', 'fê￭-￭las', 'fê￭-￭lo', 'fê￭-￭los', 'fi￭-￭la', 'fi￭-￭las', 'fi￭-￭lo', 'fi￭-￭los', 'pu￭-￭la', 'pu￭-￭las', 'pu￭-￭lo', 'pu￭-￭los', 'qui￭-￭la', 'qui￭-￭las', 'qui￭-￭lo', 'qui￭-￭los']
 sorted_subs = sorted(subs, key=len, reverse=True)
 subs=sorted_subs
 
+def protect_tags(segment):
+    protectedsegment=re.sub(r'(<[^>]+>)', r'｟\1｠',segment)
+    return(protectedsegment)
+    
 def protect(segment):
+    segment=protect_tags(segment)
     segmentList=segment.split(" ")
     segment2List=segment.split(" ")
     for i in range(0,len(segment2List)):

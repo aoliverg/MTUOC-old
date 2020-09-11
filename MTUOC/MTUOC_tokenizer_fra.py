@@ -17,12 +17,18 @@
 import pyonmttok
 import sys
 import html
+import re
 
 subs=["anniv'￭", "app'￭", "aujourd'￭", "c'￭", "champ'￭", "ct'￭", "d'￭", "grand'￭", "j'￭", "jusqu'￭", "l'￭", "lorsqu'￭", "￭-m'￭", "m'￭", "n'￭", "pauv'￭", "presqu'￭", "prod'￭", "puisqu'￭", "qu'￭", "quelqu'￭", "quéqu'￭", "quoiqu'￭", "répèt'￭", "s'￭", "sal'￭", "-t'￭", "t'￭", "vot'￭", '￭-ce', '￭-ci', '￭-là', '￭-devant', '￭-elle', '￭-même', '￭-elles', '￭-mêmes', '￭-en', '￭-ou', '￭-il', '￭-ils', '￭-je', '￭-la', '￭-le', '￭-les', '￭-leur', '￭-lui', '￭-moi', '￭-nous', '￭-on', '￭-delà', '￭-dessous', '￭-dessus', '￭-unes', '￭-uns', "￭-t'", '￭-toi', '￭-tu', 'vis￭-￭à￭-￭vis', '￭-vous', '￭-vs', '￭-y']
 sorted_subs = sorted(subs, key=len, reverse=True)
 subs=sorted_subs
 
+def protect_tags(segment):
+    protectedsegment=re.sub(r'(<[^>]+>)', r'｟\1｠',segment)
+    return(protectedsegment)
+
 def protect(segment):
+    segment=protect_tags(segment)
     segmentList=segment.split(" ")
     segment2List=segment.split(" ")
     for i in range(0,len(segment2List)):
