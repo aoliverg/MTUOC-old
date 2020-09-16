@@ -63,7 +63,7 @@ def tokenize(segment):
     segment=protect(segment)
     tokens, features = tokenizer.tokenize(segment)
     tokenized=" ".join(tokens)       
-    unprotected=unprotect(tokenized)
+    unprotected=unprotect(tokenized).replace("％0020"," ")
     return(unprotected) 
 
 def tokenize_m(segment):
@@ -71,7 +71,7 @@ def tokenize_m(segment):
     segment=protect(segment)
     tokens, features = tokenizer.tokenize(segment)
     tokenized=" ".join(tokens)       
-    unprotected=unprotect(tokenized)
+    unprotected=unprotect(tokenized).replace("％0020"," ")
     return(unprotected) 
     
 def tokenize_mn(segment):
@@ -79,7 +79,7 @@ def tokenize_mn(segment):
     segment=protect(segment)
     tokens, features = tokenizer.tokenize(segment)
     tokenized=" ".join(tokens)       
-    unprotected=unprotect(tokenized)
+    unprotected=unprotect(tokenized).replace("％0020"," ")
     return(unprotected) 
     
 def detokenize(segment):

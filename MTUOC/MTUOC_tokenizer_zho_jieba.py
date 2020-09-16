@@ -68,12 +68,14 @@ def unprotect(segment):
 def tokenize(segment):
     seg_list = jieba.cut(segment, cut_all=False)
     tokenized = " ".join(list(seg_list))
+    tokenized = tokenized.replace("％0020"," ")
     return(tokenized)
 
 def tokenize_m(segment):
     tokenizer = pyonmttok.Tokenizer("space", segment_numbers=False, joiner_annotate=True)
     seg_list = jieba.cut(segment, cut_all=False)
     tokenized = " ￭".join(list(seg_list))
+    tokenized = tokenized.replace("％0020"," ")
     return(tokenized) 
     
 def tokenize_mn(segment):
@@ -81,7 +83,8 @@ def tokenize_mn(segment):
     seg_list = jieba.cut(segment, cut_all=False)
     tokenized = " ".join(list(seg_list))
     tokens, features = tokenizer.tokenize(tokenized)
-    tokenized=" ￭".join(tokens)       
+    tokenized=" ￭".join(tokens)    
+    tokenized = tokenized.replace("％0020"," ")   
     return(tokenized) 
     
 def detokenize(segment):
