@@ -400,14 +400,12 @@ if LEARN_BPE:
         command="subword-nmt learn-joint-bpe-and-vocab --input "+"train_COMBI.pre."+SL+" train_COMBI.pre."+TL+" -s "+str(NUM_OPERATIONS)+" -o codes_file --write-vocabulary vocab_BPE."+SL+" vocab_BPE."+TL
         os.system(command)
     else:
-        if PROCESS_SL:
-            print("SL")
-            command="subword-nmt learn-joint-bpe-and-vocab --input "+"train_COMBI.pre."+SL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+SL+" --write-vocabulary vocab_BPE."+SL
-            os.system(command)
-        if PROCESS_TL:
-            print("TL")
-            command="subword-nmt learn-joint-bpe-and-vocab --input "+"train_COMBI.pre."+TL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+TL+" --write-vocabulary vocab_BPE."+TL
-            os.system(command)
+        print("SL")
+        command="subword-nmt learn-joint-bpe-and-vocab --input "+"train_COMBI.pre."+SL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+SL+" --write-vocabulary vocab_BPE."+SL
+        os.system(command)
+        print("TL")
+        command="subword-nmt learn-joint-bpe-and-vocab --input "+"train_COMBI.pre."+TL+" -s "+str(NUM_OPERATIONS)+" -o codes_file."+TL+" --write-vocabulary vocab_BPE."+TL
+        os.system(command)
 
 if APPLY_BPE: 
     if VERBOSE:
