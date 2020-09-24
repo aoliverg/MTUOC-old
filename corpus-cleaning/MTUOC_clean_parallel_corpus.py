@@ -108,6 +108,7 @@ parser.add_argument('--vTL', action='store', default=False, dest='vTL',help='Ver
 parser.add_argument('--vSetLanguages', action='store', default=False, dest='vSetLanguages',help='Set the possible languages (separated by ",". For example: en,es,fr,ru,ar,zh.)')
 parser.add_argument('--vTNOTL', action='store', default=False, dest='vTNOTL',help='Verify target language not being a given one (to avoid having SL in TL, for example).')
 parser.add_argument('--noUPPER', action='store_true', default=False, dest='noUPPER',help='Deletes the segment if it is uppercased (either source or target segment).')
+parser.add_argument('--verbose', action='store', default=False, dest='verbose',help='If set to true, shows the actions on standard output..')
 
 args = parser.parse_args()
 
@@ -182,28 +183,28 @@ for linia in entrada:
         (lang,logpercent)=langid.classify(slsegment)
         if not args.vSL==lang:
                 toWrite=False
-                print("SOURCE NOT MATCHING:",args.vSL,lang,slsegment)
+                if args.verbose: print("SOURCE NOT MATCHING:",args.vSL,lang,slsegment)
 
     if args.vTL and toWrite:
         (lang,logpercent)=langid.classify(tlsegment)
         if not args.vTL==lang:
                 toWrite=False
-                print("TARGET NOT MATCHING:",args.vTL,lang,tlsegment)
+                if args.verbose: print("TARGET NOT MATCHING:",args.vTL,lang,tlsegment)
             
     if args.vTNOTL and toWrite:
         (lang,logpercent)=langid.classify(tlsegment)
         if args.vTNOTL==lang:
                 toWrite=False
-                print("TARGET MATCHING:",args.vTNOTL,lang,tlsegment)
+                if args.verbose: print("TARGET MATCHING:",args.vTNOTL,lang,tlsegment)
         
 
     if args.noUPPER and toWrite:
         if slsegment==slsegment.upper():
             toWrite=False
-            print("DELETE UPPER:",slsegment)
+            if args.verbose: print("DELETE UPPER:",slsegment)
         if tlsegment==tlsegment.upper():
             toWrite=False
-            print("DELETE UPPER:",tlsegment)
+            if args.verbose: print("DELETE UPPER:",tlsegment)
                 
     if args.stringFromFile and toWrite:
         for rmstring in remlist:
