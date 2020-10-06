@@ -281,7 +281,7 @@ filename="train_COMBI.sp."+TL
 sortida=codecs.open(filename,"w",encoding="utf-8")
 
 if VERBOSE:
-    print("SentencePiece tain_COMBI TL",datetime.now())
+    print("SentencePiece train_COMBI TL",datetime.now())
 
 for linia in entrada:
     linia=linia.strip()
@@ -314,8 +314,8 @@ sortida=codecs.open(filename,"w",encoding="utf-8")
 
 for linia in entrada:
     linia=linia.strip()
-    liniap=tokenizerASL.protect(linia)
-    output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerSL.tokenize(liniap)[0]))+" </s>"
+    liniap=tokenizerATL.protect(linia)
+    output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
     sortida.write(output+"\n")
     
 filename="eval_SPE."+SL
@@ -342,8 +342,8 @@ if VERBOSE:
 
 for linia in entrada:
     linia=linia.strip()
-    liniap=tokenizerASL.protect(linia)
-    output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerSL.tokenize(liniap)[0]))+" </s>"
+    liniap=tokenizerATL.protect(linia)
+    output="<s> "+tokenizerATL.unprotect(" ".join(tokenizerTL.tokenize(liniap)[0]))+" </s>"
     sortida.write(output+"\n")
     
 if GUIDED_ALIGNMENT:
