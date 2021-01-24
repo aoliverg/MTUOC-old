@@ -1,0 +1,40 @@
+train_src:
+- train.sp.en
+train_tgt:
+- train.sp.es
+train_align:
+- train.sp.es.en.align
+
+valid_src: val.sp.en
+valid_tgt: val.sp.es
+valid_align: val.sp.en.es.align
+
+data_type: text
+features_vocabs_prefix: ''
+image_channel_size: 3
+log_file: ''
+log_file_level: '0'
+max_shard_size: 0
+num_threads: 1
+report_every: 100000
+sample_rate: 16000
+save_data: demo
+seed: 3435
+shard_size: 1000000
+shuffle: 0
+src_dir: ''
+src_seq_length: 50
+src_vocab: ''
+src_vocab_size: 50000
+src_words_min_frequency: 0
+subword_prefix: "\u2581"
+tgt_seq_length: 50
+tgt_vocab: ''
+tgt_vocab_size: 50000
+tgt_words_min_frequency: 0
+train_ids:
+- null
+vocab_size_multiple: 1
+window: hamming
+window_size: 0.02
+window_stride: 0.01
