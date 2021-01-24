@@ -1,0 +1,41 @@
+MTEngine:
+    MTengine: Marian
+    startMTEngine: True
+    startCommand: "./marian-server-GPU -m model.npz -v vocab-en.yml vocab-es.yml -p 8080 --n-best --alignment hard  --normalize 1 &"
+    IP: localhost
+    port: 8080
+    #The port is needed for MTUOC-stop-server.py
+    min_len_factor: 0.5
+    #for Marian to avoid very short translations
+    
+MTUOCServer:
+  port: 8000
+  type: ModernMT
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
+  verbose: True
+  restore_tags: True
+  restore_case: True
+  URLs: True
+  EMAILs: True
+  
+  ONMT_url_root: "/translator"
+  #specific configuration when acting as ONMT server
+
+Preprocess:
+  sl_lang: en
+  tl_lang: es
+  sl_tokenizer: MTUOC_tokenizer_eng.py
+  tl_tokenizer: MTUOC_tokenizer_spa.py
+  sp_model_SL: spmodel.model
+  sp_vocabulary_SL: vocab_file.en
+  #or None if not used
+  sp_vocabulary_threshold: 50
+  #or None if not used
+  tcmodel: tc.en
+  #or None if not used
+  bos_annotate: <s>
+  #None or <s> (or other)
+  eos_annotate: </s>
+  #None or <s> (or other)
+  sp_joiner: "▁"
+

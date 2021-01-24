@@ -1,0 +1,18 @@
+MTUOC: /MTUOC4.0
+
+trainPreCorpus: train-pre-eng-spa.txt
+valPreCorpus: val-pre-eng-spa.txt
+
+SL: en
+TL: es
+
+#VERBOSE
+VERBOSE: True
+
+SL_TOKENIZER: MTUOC_tokenizer_spa
+TL_TOKENIZER: MTUOC_tokenizer_spa
+
+REPLACE_NUM: True
+
+NUM_CODE: "@NUM@"
+

@@ -1,0 +1,29 @@
+trainCorpus: train-eng-spa.txt
+valCorpus: val-eng-spa.txt
+
+trainPreCorpus: train-pre-eng-spa.txt
+valPreCorpus: val-pre-eng-spa.txt
+
+MTUOC: /MTUOC4.0
+
+REPLACE_EMAILS: True
+EMAIL_CODE: "@EMAIL@"
+REPLACE_URLS: True
+URL_CODE: "@URL@"
+
+TRAIN_SL_TRUECASER: True
+SL_DICT: /MTUOC3.1/eng.dict
+TRUECASE_SL: True
+SL_TC_MODEL: tc.en
+
+TRAIN_TL_TRUECASER: True
+TL_DICT: /MTUOC3.1/spa.dict
+TRUECASE_TL: True
+TL_TC_MODEL: tc.es
+
+SL_TOKENIZER: MTUOC_tokenizer_eng
+TL_TOKENIZER: MTUOC_tokenizer_spa
+
+CLEAN: True
+MIN_TOK: 1
+MAX_TOK: 80
