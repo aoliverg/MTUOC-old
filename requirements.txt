@@ -1,0 +1,11 @@
+jieba==0.42.1
+requests==2.22.0
+sentencepiece==0.1.91
+subword_nmt==0.3.7
+nltk==3.5
+lxml==4.5.0
+pyonmttok==1.22.1
+Flask==1.1.2
+PyYAML==5.4.1
+SimpleWebSocketServer==0.1.1
+websocket_client==0.57.0
