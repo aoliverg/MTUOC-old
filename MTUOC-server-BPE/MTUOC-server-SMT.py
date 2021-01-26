@@ -1,4 +1,4 @@
-#    MTUOC-server-BPE v 4.0 
+#    MTUOC-server-SMT v 4.0   
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2021  Antoni Oliver
 #
@@ -36,9 +36,6 @@ import io
 import lxml
 import lxml.etree as ET
 import html
-
-from subword_nmt import apply_bpe
-
 
 ###YAML IMPORTS
 import yaml
@@ -212,59 +209,72 @@ def detruecase(line,tokenizer):
 
 #PREPROCESSING AND POSTPROCESSING
 
-def load_codes(codes, joiner="@@"):
-    bpeobject=apply_bpe.BPE(open(codes,encoding="utf-8"),separator=joiner)
-    return(bpeobject)
-    
-    
-def adapt_output(segment, bos_annotate=True, eos_annotate=True):
-    if bos_annotate:
-        segment="<s> "+segment
-    if eos_annotate:
-        segment=segment+" </s>"
-    return(segment)
-    
-def apply_BPE(bpeobject,segment):
-    segmentBPE=bpeobject.process_line(segment)
-    return(segmentBPE)
-    
-def deapply_BPE(segment, joiner="@@"):
-    regex = r"(" + re.escape(joiner) + " )|("+ re.escape(joiner) +" ?$)"
-    segment=re.sub(regex, '', segment)
-    regex = r"( " + re.escape(joiner) + ")|(^ $"+ re.escape(joiner) +")"
-    segment=re.sub(regex, '', segment)
-    return(segment)
-    
-def to_MT_BPE(segment, tokenizer, tcmodel, bpeobject, joiner="@@", bos_annotate=True, eos_annotate=True):
-    segmenttok=tokenizer.tokenize(segment)
+def to_MT_SMT(segment,tokenizer,tcmodel):
+    hastags=has_tags(segment)
+    segment=segment.strip()
     if not tcmodel==None:        
         segmenttrue=truecase(tcmodel,tokenizer,segment)
     else:
         segmenttrue=segment
-    if bpeobject:
-        segmentBPE=apply_BPE(bpeobject,segmenttrue)
+    '''
+    if not hastags:
+        output=sp.encode(segmenttrue)
     else:
-        segmentBPE=segmenttrue
-    segmentBPE=adapt_output(segmentBPE, bos_annotate, eos_annotate)
-    return(segmentBPE)
+        output=[]
+        segmenttrue=tokenizer.tokenize(segmenttrue)
+        
+        for t in splitTags(segmenttrue):
+            if not is_tag(t):
+                sptok=" ".join(sp2.encode(t))
+                output.append(sptok)
+            else:
+                output.append(t)
+        if not eos==None: output.append("</s>")
+        
+    output=" ".join(output)'''
+    segmenttrue=tokenizer.tokenize(segmenttrue)
+    return(segmenttrue)
 
-
-def from_MT_BPE(segment, tokenizer, joiner="@@", bos_annotate=True, eos_annotate=True):
-    print("SEGMENT",segment)
-    if bos_annotate: segment=segment.replace("<s>","")
-    if eos_annotate: segment=segment.replace("</s>","")
-    segmentNOBPE=deapply_BPE(segment,joiner)
-    print("SEGMENTNOBPE",segmentNOBPE)
-    segmenttok=detruecase(segmentNOBPE,tokenizer)
-    print("SEGMENTTOK",segmenttok)
-    segment= tokenizer.detokenize(segmenttok)
+def from_MT_SMT(segment, tokenizer):
+    #protect spaces in tags
+    tags=re.findall(r'<[^>]+>',segment)
+    for tag in tags:
+        if tag.find(" ")>-1:
+            tagmod=joiner+tag.replace(" ","&#32;")
+            segment=segment.replace(tag,tagmod,1)
+    for tag in tags:
+        if tag.find("&#32;")>-1:
+            tagmod=tag.replace(" ","&#32;")
+            segment=segment.replace(tagmod,tag,1)
     segment=segment.strip()
-    print("SEGMENT FINAL",segment)
-    return(segment)
-
-
+    segmenttrue=detruecase(segment,tokenizer)
+    segmentdetok=tokenizer.detokenize(segmenttrue)
+    tags=re.findall(r'<[^>]+>',segmentdetok)
+    for tag in tags:
+        if tag.find("▁")>-1:
+            tagmod=tag.replace("▁"," ")
+            segmentdetok=segmentdetok.replace(tag,tagmod,1)
+    segmentdetok=segmentdetok.strip()
+    return(segmentdetok)
 
 ###
+def translate(segment):
+    #function for Moses server
+    print("Translating: ",segment['text'])
+    translation=translate_segment(segment['text'])
+    print("Translation: ",translation)
+    translationdict={}
+    translationdict["text"]=translation
+    return(translationdict)
+
+def translateAliMoses(aliBRUT):
+    newali=[]
+    for a in aliBRUT:
+        at=str(a['source-word'])+"-"+str(a['target-word'])
+        newali.append(at)
+    newali=" ".join(newali)
+
+    return(newali)
 
 def splitTags(segment):
     tags=re.findall('(<[^>]+>)', segment)
@@ -282,26 +292,29 @@ def removeSpeChar(llista,spechar):
     return(llista)
         
 
-def restore_tags(SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNOTAGSTOKSP, spechar="▁", bos="<s>", eos="</s>"):
+def restore_tags(SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNOTAGSTOKSP):
     relations={}
     for t in SELECTEDALIGNMENT.split(" "):
         camps=t.split("-")
         if not int(camps[0]) in relations:
             relations[int(camps[0])]=[]
         relations[int(camps[0])].append(int(camps[1]))
-    f = io.BytesIO(SOURCETAGSTOKSP.encode('utf-8'))
+    SOURCETAGSTOKSPMOD="<s> "+SOURCETAGSTOKSP+" </s>"
+    f = io.BytesIO(SOURCETAGSTOKSPMOD.encode('utf-8'))
     events = ("start", "end")
     context = ET.iterparse(f, events=events,recover=True)
     cont_g=-1
     tags=[]
     tagpairs=[]
     LISTSOURCETAGSTOKSP=splitTags(SOURCETAGSTOKSP)
-    LISTSOURCETAGSTOK=removeSpeChar(LISTSOURCETAGSTOKSP,spechar)
+    #LISTSOURCETAGSTOK=removeSpeChar(LISTSOURCETAGSTOKSP,spechar)
+    LISTSOURCETAGSTOK=LISTSOURCETAGSTOKSP
     LISTSOURCENOTAGSTOKSP=splitTags(SOURCENOTAGSTOKSP)
     LISTTARGETNOTAGSTOKSP=splitTags(TARGETNOTAGSTOKSP)
     TEMPLIST=LISTSOURCETAGSTOKSP
     charbefore={}
     charafter={}
+    print("SOURCETAGSTOKSP",SOURCETAGSTOKSP)
     for event, elem in context:
         if not elem.tag=="s":
             tag=elem.tag
@@ -445,15 +458,6 @@ def repairSpacesTags(slsegment,tlsegment,delimiters=[" ",".",":",";","?","!"]):
     return(tlsegment)
 
 ###
-def translate(segment):
-    #function for Moses server
-    print("Translating: ",segment['text'])
-    translation=translate_segment(segment['text'])
-    print("Translation: ",translation)
-    translationdict={}
-    translationdict["text"]=translation
-    return(translationdict)
-
 def translate_segment(segment):
     try:
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment: "+"\t"+segment)
@@ -467,24 +471,26 @@ def translate_segment(segment):
         if MTUOCServer_URLs:
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
         if MTUOCServer_verbose and not segmentNOTAGS==segment: print(str(datetime.now())+"\t"+"SL segment NO TAGS: "+"\t"+segmentNOTAGS)
-        segmentPRENOTAGS=to_MT_BPE(segmentNOTAGS, tokenizer, ltcmodel, bpeobject, bpe_joiner, bos_annotate, eos_annotate)
+        segmentPRENOTAGS=to_MT_SMT(segmentNOTAGS,tokenizer,ltcmodel)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment PRE NO TAGS: "+"\t"+segmentPRENOTAGS)
-        segmentPRETAGS=to_MT_BPE(segmentTAGS, tokenizer, ltcmodel, bpeobject, bpe_joiner, bos_annotate, eos_annotate)
+        segmentPRETAGS=to_MT_SMT(segmentTAGS,tokenizer,ltcmodel)
         if MTUOCServer_verbose and not segmentPRENOTAGS==segmentPRETAGS: print(str(datetime.now())+"\t"+"SL segment PRE TAGS: "+"\t"+segmentPRETAGS)
         hastags=has_tags(segment)
         if MTUOCServer_MTengine=="Marian":
                 (selectedtranslationPre, selectedalignment)=translate_segment_Marian(segmentPRENOTAGS)
+        elif MTUOCServer_MTengine=="Moses":
+                (selectedtranslationPre, selectedalignment)=translate_segment_Moses(segmentPRENOTAGS)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE: "+"\t"+selectedtranslationPre)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"alignment: "+"\t"+selectedalignment)
         #restoring tags
         if MTUOCServer_restore_tags and hastags:
-            selectedtranslationTags=restore_tags(segmentPRENOTAGS, segmentPRETAGS, selectedalignment, selectedtranslationPre, spechar="▁")
+            selectedtranslationTags=restore_tags(segmentPRENOTAGS, segmentPRETAGS, selectedalignment, selectedtranslationPre)
             if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE TAGS: "+"\t"+selectedtranslationTags)
         else:
             selectedtranslationTags=selectedtranslationPre
             if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE: "+"\t"+selectedtranslationTags)
         
-        selectedtranslationTags=from_MT_BPE(selectedtranslationTags, tokenizer, bpe_joiner, bos_annotate, eos_annotate)
+        selectedtranslationTags=from_MT_SMT(selectedtranslationTags,detokenizer)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation: "+"\t"+selectedtranslationTags)
         #restoring/removing spaces before and after tags
         if MTUOCServer_restore_tags and hastags:
@@ -519,12 +525,10 @@ def translate_segment_Marian(segmentPre):
     firsttranslationPre=""
     selectedtranslation=""
     selectedalignment=""
-    print("TRANSLATIONS",translations)
     candidates=translations.split("\n")
     translation=""
     alignments=""
     for candidate in candidates:
-        print("CANDIDATE",candidate)
         camps=candidate.split(" ||| ")
         if len(camps)>2:
             translation=camps[1]
@@ -543,6 +547,15 @@ def translate_segment_Marian(segmentPre):
             cont+=1
     
     return(selectedtranslationPre, selectedalignment)
+    
+def translate_segment_Moses(segmentPre):
+    param = {"text": segmentPre}
+    result = proxyMoses.translate(param)
+    print("RESULT",result)
+    translationREP=result['text']
+    alignmentBRUT=result['word-align']
+    alignments=translateAliMoses(alignmentBRUT)
+    return(translationREP, alignments)  
 
 def translate_segment_OpenNMT(segmentPre):
     params = [{ "src" : segmentPre}]
@@ -604,7 +617,6 @@ startMTEngine=config["MTEngine"]["startMTEngine"]
 startMTEngineCommand=config["MTEngine"]["startCommand"]
 MTEngineIP=config["MTEngine"]["IP"]
 MTEnginePort=config["MTEngine"]["port"]
-min_len_factor=config["MTEngine"]["min_len_factor"]
 
 if startMTEngine:
     x = threading.Thread(target=startMTEngineThread, args=(startMTEngineCommand,))
@@ -623,16 +635,8 @@ sllang=config["Preprocess"]["sl_lang"]
 tllang=config["Preprocess"]["tl_lang"]
 MTUOCtokenizer=config["Preprocess"]["sl_tokenizer"]
 MTUOCdetokenizer=config["Preprocess"]["tl_tokenizer"]
-
-
-bpecodes=config["Preprocess"]["bpecodes"]
 tcmodel=config["Preprocess"]["tcmodel"]
-bos_annotate=config["Preprocess"]["bos_annotate"]
-eos_annotate=config["Preprocess"]["eos_annotate"]
-bpe_joiner=config["Preprocess"]["bpe_joiner"]
 
-
-bpeobject=load_codes(bpecodes)
 
 if not MTUOCServer_MTengine=="ModernMT":
     spec = importlib.util.spec_from_file_location('', MTUOCtokenizer)
@@ -646,7 +650,6 @@ if not MTUOCServer_MTengine=="ModernMT":
     #loading truecasing model
     if not tcmodel==None:
         ltcmodel=load_tc_model(tcmodel)
-
     '''
     #vocabulary restriction
     if not spvocabulary_threshold==None:
@@ -687,6 +690,9 @@ elif MTUOCServer_MTengine=="OpenNMT":
     import requests
     url = "http://"+MTEngineIP+":"+str(MTEnginePort)+"/translator/translate"
     headers = {'content-type': 'application/json'}
+    
+elif MTUOCServer_MTengine=="Moses":
+    proxyMoses = xmlrpc.client.ServerProxy("http://"+MTEngineIP+":"+str(MTEnginePort)+"/RPC2")
     
     
 #STARTING MTUOC SERVER
