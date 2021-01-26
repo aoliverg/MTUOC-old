@@ -84,8 +84,10 @@ def percentLET(segment):
     
 def escapeforMoses(segment):
     segment=segment.replace("[","&lbrack;")
-    segment=segment.replace("]","&rbrack;")
+    segment=segment.replace("]","&rbrack;")    
     segment=segment.replace("|","&verbar;")
+    segment=segment.replace("<","&lt;")
+    segment=segment.replace(">","&gt;")
     return(segment)
     
 

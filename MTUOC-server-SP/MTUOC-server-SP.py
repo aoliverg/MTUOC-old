@@ -443,6 +443,15 @@ def repairSpacesTags(slsegment,tlsegment,delimiters=[" ",".",":",";","?","!"]):
     return(tlsegment)
 
 ###
+def translate(segment):
+    #function for Moses server
+    print("Translating: ",segment['text'])
+    translation=translate_segment(segment['text'])
+    print("Translation: ",translation)
+    translationdict={}
+    translationdict["text"]=translation
+    return(translationdict)
+
 def translate_segment(segment):
     try:
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment: "+"\t"+segment)
