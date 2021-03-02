@@ -88,6 +88,13 @@ def remove_tags(segment):
     segmentnotags=re.sub('(<[^>]+>)', "",segment)
     segmentnotags=re.sub('({[0-9]+})', "",segmentnotags)
     return(segmentnotags)
+    
+def get_tags(segment):
+    tagsA = re.findall(r'</?.+?/?>', segment)
+    tagsB = re.findall(r'\{[0-9]+\}', segment)
+    tags=tagsA.copy()
+    tags.extend(tagsB)
+    return(tags)
 
 ###URLs EMAILs
 
@@ -420,29 +427,146 @@ def restore_tags(SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNO
     translationTagsSP=" ".join(LISTTARGETTAGSTOKSP)
     return(translationTagsSP)
 
-def repairSpacesTags(slsegment,tlsegment,delimiters=[" ",".",":",";","?","!"]):
-    sltags=re.findall('(<[^>]+>)', slsegment)
-    tltags=re.findall('(<[^>]+>)', tlsegment)
+def repairSpacesTags(slsegment,tlsegment,delimiters=[" ",".",",",":",";","?","!"]):
+    sltags=get_tags(slsegment)
+    tltags=get_tags(tlsegment)
     commontags=list(set(sltags).intersection(tltags))
     for tag in commontags:
-        tagaux=tag
-        chbfSL=slsegment[slsegment.index(tag)-1]
-        chbfTL=tlsegment[tlsegment.index(tag)-1]
-        tagmod=tag
-        if chbfSL in delimiters and chbfTL not in delimiters:
-            tagmod=" "+tagmod
-        if not chbfSL in delimiters and chbfTL in delimiters:
-            tagaux=" "+tagaux
-        chafSL=slsegment[slsegment.index(tag)+len(tag)]
-        chafTL=tlsegment[tlsegment.index(tag)+len(tag)]
-        if chafSL in delimiters and not chafTL in delimiters:
-            tagmod=tagmod+" "
-        if not chafSL in delimiters and chafTL in delimiters:
-            tagaux=tagaux+" "
-        tlsegment=tlsegment.replace(tagaux,tagmod,1)
+        try:
+            tagaux=tag
+            chbfSL=slsegment[slsegment.index(tag)-1]
+            chbfTL=tlsegment[tlsegment.index(tag)-1]
+            tagmod=tag
+            if chbfSL in delimiters and chbfTL not in delimiters:
+                tagmod=" "+tagmod
+            if not chbfSL in delimiters and chbfTL in delimiters:
+                tagaux=" "+tagaux
+            try:
+                chafSL=slsegment[slsegment.index(tag)+len(tag)]
+            except:
+                pass
+            try:
+                chafTL=tlsegment[tlsegment.index(tag)+len(tag)]
+            except:
+                pass
+            if chafSL in delimiters and not chafTL in delimiters:
+                tagmod=tagmod+" "
+            if not chafSL in delimiters and chafTL in delimiters:
+                tagaux=tagaux+" "
+            #slsegment=slsegment.replace(tagaux,tagmod,1)
+            tlsegment=tlsegment.replace(tagaux,tagmod,1)
+            tlsegment=tlsegment.replace("  "+tag," "+tag,1)
+            tlsegment=tlsegment.replace(tag+"  ",tag+" ",1)
+            
+        except:
+            print("ERROR in tag:",tag)
     return(tlsegment)
 
 ###
+
+def lreplace(pattern, sub, string):
+    """
+    Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
+    """
+    return re.sub('^%s' % pattern, sub, string)
+
+def rreplace(pattern, sub, string):
+    """
+    Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
+    """
+    return re.sub('%s$' % pattern, sub, string)
+
+
+def has_tags(segment):
+    response=False
+    tagsA = re.findall(r'</?.+?/?>', segment)
+    tagsB = re.findall(r'\{[0-9]+\}', segment)
+    if len(tagsA)>0 or len(tagsB)>0:
+        response=True
+    return(response)
+    
+def is_tag(token):
+    response=False
+    tagsA = re.match(r'</?.+?/?>', token)
+    tagsB = re.match(r'\{[0-9]+\}', token)
+    if tagsA or tagsB:
+        response=True
+    return(response)
+    
+def remove_tags(segment):
+    segmentnotags=re.sub('(<[^>]+>)', "",segment)
+    segmentnotags=re.sub('({[0-9]+})', "",segmentnotags)
+    return(segmentnotags)
+    
+def get_name(tag):
+    name=tag.split(" ")[0].replace("<","").replace(">","").replace("/","")
+    return(name)
+
+def group_tags(segment):
+    tagsGAaux= re.findall(r'((</?[^>]+?/?>\s?){2,})', segment)
+    tagsG=[]
+    for t in tagsGAaux:
+        tagsG.append(t[0])
+    tagsGBaux= re.findall(r'((\{[0-9]+\}\s?){2,})', segment)
+    for t in tagsGBaux:
+        tagsG.append(t[0])
+    
+    conttag=0
+    equil={}
+    for t in tagsG:
+        trep="<tagG"+str(conttag)+">"
+        segment=segment.replace(t,trep)
+        equil[trep]=t
+        conttag+=1
+    
+    
+    return(segment,equil)
+
+def replace_tags(segment):
+    equil={}
+    if has_tags(segment):
+        tagsA = re.findall(r'</?.+?/?>', segment)
+        tagsB = re.findall(r'\{[0-9]+\}', segment)
+        tags=tagsA.copy()
+        tags.extend(tagsB)
+        conttag=0
+        for tag in tags:
+            tagrep="<tag"+str(conttag)+">"
+            segment=segment.replace(tag,tagrep,1)
+            equil[tagrep]=tag
+            if tag in tagsA:
+                tagclose="</"+get_name(tag)+">"
+                tagcloserep="</tag"+str(conttag)+">"
+                if segment.find(tagclose)>-1:
+                    segment=segment.replace(tagclose,tagcloserep)
+                    equil[tagcloserep]=tagclose
+                    tags.remove(tagclose)
+            conttag+=1
+            
+        return(segment,equil)
+        
+    else:
+        return(segment,equil)
+        
+def remove_start_end_tag(segment):
+    try:
+        starttag=re.match("</?tag[0-9]+>",segment)
+        starttag=starttag.group()
+    except:
+        starttag=None
+    try:
+        endtag=re.search("</?tag[0-9]+>$",segment)
+        endtag=endtag.group()
+    except:
+        endtag=None
+    if starttag:
+        segment=lreplace(starttag,"",segment)
+    if endtag:
+        segment=rreplace(endtag,"",segment)
+    return(segment,starttag,endtag)
+###
+
+
 def translate(segment):
     #function for Moses server
     print("Translating: ",segment['text'])
@@ -454,11 +578,25 @@ def translate(segment):
 
 def translate_segment(segment):
     try:
+        if unescape_html:
+            segment=html.unescape(segment)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment: "+"\t"+segment)
         #leading and trailing spaces
         leading_spaces=len(segment)-len(segment.lstrip())
         trailing_spaces=len(segment)-len(segment.rstrip())-1
-        segmentTAGS=segment
+        segment=segment.lstrip().rstrip()
+        ###Pretractament dels tags
+        (segmentTAGS,equilG)=group_tags(segment)
+        print(segmentTAGS)
+        print("EQUILG",equilG)
+        (segmentTAGS,equil)=replace_tags(segmentTAGS)
+        print(segmentTAGS)
+        print("EQUILG",equil)
+        
+        tagInici=""
+        tagFinal=""
+        (segmentTAGS,tagInici,tagFinal)=remove_start_end_tag(segmentTAGS)
+        
         segmentNOTAGS=remove_tags(segment)
         if MTUOCServer_EMAILs:
             segmentNOTAGS=replace_EMAILs(segmentNOTAGS)
@@ -482,8 +620,26 @@ def translate_segment(segment):
             selectedtranslationTags=selectedtranslationPre
             if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE: "+"\t"+selectedtranslationTags)
         
+        
+
+        
+        
+        #Leading and trailing tags
         selectedtranslationTags=from_MT_SP(selectedtranslationTags,detokenizer)
         if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation: "+"\t"+selectedtranslationTags)
+        if tagInici:
+            selectedtranslationTags=tagInici+selectedtranslationTags
+        if tagFinal:
+            selectedtranslationTags=selectedtranslationTags+tagFinal
+        #Restoring real tags
+        for t in equil:
+            print("***",t,equil[t])
+            selectedtranslationTags=selectedtranslationTags.replace(t,equil[t])
+        print("***",selectedtranslationTags)
+        for t in equilG:
+            print("***",t,equilG[t])
+            selectedtranslationTags=selectedtranslationTags.replace(t,equilG[t])
+        print("***",selectedtranslationTags)
         #restoring/removing spaces before and after tags
         if MTUOCServer_restore_tags and hastags:
             selectedtranslationTags=repairSpacesTags(segment,selectedtranslationTags)
@@ -507,6 +663,10 @@ def translate_segment(segment):
                 
     except:
         print("ERROR:",sys.exc_info())
+        
+    if add_trailing_space:
+        selectedtranslation=selectedtranslation+" "
+    
     return(selectedtranslation)
 
 def translate_segment_Marian(segmentPre):
@@ -613,6 +773,8 @@ MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
 MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
 MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
 MTUOCServer_EMAILs=config["MTUOCServer"]["EMAILs"]
+add_trailing_space=config["MTUOCServer"]["add_trailing_space"]
+unescape_html=config["MTUOCServer"]["EMAILs"]
 MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
 
 sllang=config["Preprocess"]["sl_lang"]

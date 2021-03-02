@@ -10,14 +10,15 @@ MTEngine:
     
 MTUOCServer:
   port: 8000
-  type: ModernMT
+  type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   verbose: True
   restore_tags: True
   restore_case: True
   URLs: True
   EMAILs: True
-  
+  add_trailing_space: True
+  unescape_html: True
   ONMT_url_root: "/translator"
   #specific configuration when acting as ONMT server
 
