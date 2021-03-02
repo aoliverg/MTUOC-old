@@ -1,5 +1,5 @@
 #    MTUOC_train_truecaser
-#    Copyright (C) 2020  Antoni Oliver
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,8 +19,10 @@ import codecs
 import pickle
 import argparse
 import importlib
-import importlib.util
 
+
+
+initchars=["¡","¿","-","*","+","'",'"',"«","»","—","‘","’","“","”","„",]
 
 
 def detect_type(segment):
@@ -31,8 +33,6 @@ def detect_type(segment):
     utokens=0
     ltokens=0
     for token in tokens:
-        token=token.replace("￭","")
-        token=token.replace("▁","")
         if token.isalpha() and token==token.lower():
             ltokens+=1
         elif token.isalpha():
@@ -46,10 +46,15 @@ def detect_type(segment):
 
     return(tipus)
     
+def isinitsymbol(token):
+    if len(token)==1 and token in initchars:
+        return(True)
+    else:
+        return(False)
     
-def train_truecaser(model,corpus,dictionary,usetokenizer=None):
+def train_truecaser(model,corpus,dictionary):
     tc_model={}
-    if not corpus=="none":
+    if not corpus=="None":
         print("Reading corpus:",corpus)
         entrada=codecs.open(corpus,"r",encoding="utf-8")
         for line in entrada:
@@ -57,15 +62,11 @@ def train_truecaser(model,corpus,dictionary,usetokenizer=None):
             tipus=detect_type(line)
             if tipus=="regular":
                 #learn model only from regular segments
-                if usetokenizer:
-                    tokens=tokenizer.tokenize(line).split(" ")
-                else:
-                    tokens=line.split(" ")
+                tokens=tokenizer.tokenize(line).split(" ")
                 position=0
                 for token in tokens:
-                    token=token.replace("￭","")
-                    token=token.replace("▁","")
-                    position+=1
+                    if not isinitsymbol(token):
+                        position+=1
                     key=token.lower()
                     if key==key.lower() and key==key.upper():
                         pass
@@ -88,7 +89,7 @@ def train_truecaser(model,corpus,dictionary,usetokenizer=None):
                                 
                             
                     
-    if not dictionary=="none":
+    if not dictionary=="None":
         print("Reading dictionary:",dictionary)
         entrada=codecs.open(dictionary,"r",encoding="utf-8")
         for line in entrada:
@@ -116,19 +117,19 @@ def train_truecaser(model,corpus,dictionary,usetokenizer=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MTUOC program for truecaser training.')
     parser.add_argument('-m','--model', action="store", dest="model", help='The resulting truecasing model.',required=True)
-    parser.add_argument('-c','--corpus', action="store", dest="corpus", help='The corpus to be used.',required=False)
-    parser.add_argument('-d','--dictionary', action="store", dest="dictionary", help='The dictionary to be used.',required=False)
-    parser.add_argument('-t','--tokenizer', action="store", dest="tokenizer", help='The tokenizer to be used.',required=False)
+    parser.add_argument('-c','--corpus', action="store", dest="corpus", help='The corpus to be used or None.',required=True)
+    parser.add_argument('-d','--dictionary', action="store", dest="dictionary", help='The dictionary to be used or None.',required=True)
+    parser.add_argument('-t','--tokenizer', action="store", dest="tokenizer", help='The tokenizer to be used.',required=True)
     
     args = parser.parse_args()
     model=args.model
     corpus=args.corpus
     dictionary=args.dictionary
-    if args.tokenizer:
-        spec = importlib.util.spec_from_file_location('', args.tokenizer)
-        tokenizer = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(tokenizer)
-        train_truecaser(model,corpus,dictionary,args.tokenizer)
-    else:
-        train_truecaser(model,corpus,dictionary)
+    #tokenizer=importlib.import_module(args.tokenizer)
+    SL_TOKENIZER=args.tokenizer
+    if not SL_TOKENIZER.endswith(".py"): SL_TOKENIZER=SL_TOKENIZER+".py"
+    spec = importlib.util.spec_from_file_location('', SL_TOKENIZER)
+    tokenizer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tokenizer)
+    train_truecaser(model,corpus,dictionary)
     

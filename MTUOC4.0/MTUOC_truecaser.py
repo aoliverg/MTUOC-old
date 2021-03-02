@@ -1,5 +1,5 @@
 #    MTUOC_truecaser
-#    Copyright (C) 2020  Antoni Oliver
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,14 @@ import codecs
 import pickle
 import argparse
 import importlib
+
+initchars=["¡","¿","-","*","+","'",'"',"«","»","—","‘","’","“","”","„",]
+
+def isinitsymbol(token):
+    if len(token)==1 and token in initchars:
+        return(True)
+    else:
+        return(False)
 
 def load_model(model):
     if not model=="None":
@@ -128,9 +136,15 @@ if __name__ == "__main__":
     for line in sys.stdin:
         line=line.strip()
         tcline=truecase(tc_model,tokenizer,line)
+        if isinitsymbol(tcline[0]):firstchar=1
+        else: firstchar=0
+        print(firstchar)
         if not nuf:
             try:
-                tcline=tcline[0].upper()+"".join(tcline[1:])
+                if firstchar==0:
+                    tcline=tcline[firstchar].upper()+"".join(tcline[1:])
+                elif firstchar==1:
+                    tcline=tcline[0]+tcline[firstchar].upper()+"".join(tcline[2:])
             except:
                 pass
             

@@ -1,5 +1,5 @@
-#    MTUOC_tokenizer_cat 3.1
-#    Copyright (C) 2020  Antoni Oliver
+#    MTUOC_tokenizer_cat 4.0
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -13,6 +13,8 @@
 
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# «»—‘’“”
 
 import string
 import re
@@ -29,6 +31,8 @@ import html
 #/ &#47;
 #{ &#123;
 #} &#125;
+
+specialchars=["«","»","—","‘","’","“","”","„",]
 
 subs=["d'￭","￭'en","￭'hi","￭'ho","￭'l","l'￭","￭'ls","￭'m","m'￭","￭'n","n'￭","￭'ns","￭'s","s'￭","￭'t","t'￭","￭-el","￭-els","￭-em","￭-en","￭-ens","￭-hi","￭-ho","￭-l","￭-la","￭-les","￭-li","￭-lo","￭-los","￭-m","￭-me","￭-n","￭-ne","￭-nos","￭-s","￭-se","￭-te","￭-t","￭-us","￭-vos"]
 re_num = re.compile(r'[\d\,\.]+')
@@ -75,7 +79,8 @@ def unprotect(cadena):
 
 
 def main_tokenizer(segment):
-    segment=" "+segment+" "
+    
+    segment=" "+segment+" "    
     cadena=protect_tags(segment)
     for s in subs:
         sA=s.replace("￭","")
@@ -106,7 +111,17 @@ def main_tokenizer(segment):
         pmod=" "+p
         if cadena.find(pmod)==-1:
             pmod2=" ￭"+p
+            cadena=cadena.replace(p,pmod2)    
+    for p in specialchars:
+        pmod=p+" "
+        if cadena.find(pmod)==-1:
+            pmod2=p+"￭ "
             cadena=cadena.replace(p,pmod2)
+        pmod=" "+p
+        if cadena.find(pmod)==-1:
+            pmod2=" ￭"+p
+            cadena=cadena.replace(p,pmod2)
+
     return(cadena[1:-1])
     
     return(cadena)

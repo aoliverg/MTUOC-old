@@ -1,5 +1,5 @@
-#    MTUOC_tokenizer_fra 3.1
-#    Copyright (C) 2020  Antoni Oliver
+#    MTUOC_tokenizer_fra 4.0
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,9 +31,10 @@ import html
 #{ &#123;
 #} &#125;
 
-subs=["￭'s"]
+specialchars=["«","»","—","‘","’","“","”","„",]
 
 subs=["anniv'￭", "app'￭", "aujourd'￭", "c'￭", "champ'￭", "ct'￭", "d'￭", "grand'￭", "j'￭", "jusqu'￭", "l'￭", "lorsqu'￭", "￭-m'￭", "m'￭", "n'￭", "pauv'￭", "presqu'￭", "prod'￭", "puisqu'￭", "qu'￭", "quelqu'￭", "quéqu'￭", "quoiqu'￭", "répèt'￭", "s'￭", "sal'￭", "-t'￭", "t'￭", "vot'￭", '￭-ce', '￭-ci', '￭-là', '￭-devant', '￭-elle', '￭-même', '￭-elles', '￭-mêmes', '￭-en', '￭-ou', '￭-il', '￭-ils', '￭-je', '￭-la', '￭-le', '￭-les', '￭-leur', '￭-lui', '￭-moi', '￭-nous', '￭-on', '￭-delà', '￭-dessous', '￭-dessus', '￭-unes', '￭-uns', "￭-t'", '￭-toi', '￭-tu', 'vis￭-￭à￭-￭vis', '￭-vous', '￭-vs', '￭-y']
+
 
 def split_numbers(segment):
     xifres = re.findall(re_num,segment)
@@ -107,6 +108,17 @@ def main_tokenizer(segment):
         if cadena.find(pmod)==-1:
             pmod2=" ￭"+p
             cadena=cadena.replace(p,pmod2)
+            
+    for p in specialchars:
+        pmod=p+" "
+        if cadena.find(pmod)==-1:
+            pmod2=p+"￭ "
+            cadena=cadena.replace(p,pmod2)
+        pmod=" "+p
+        if cadena.find(pmod)==-1:
+            pmod2=" ￭"+p
+            cadena=cadena.replace(p,pmod2)
+            
     return(cadena[1:-1])
     
     return(cadena)

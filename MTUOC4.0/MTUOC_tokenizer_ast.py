@@ -1,5 +1,5 @@
-#    MTUOC_tokenizer_ast 3.1
-#    Copyright (C) 2020  Antoni Oliver
+#    MTUOC_tokenizer_ast 4.0
+#    Copyright (C) 2021 Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -30,6 +30,9 @@ import html
 #/ &#47;
 #{ &#123;
 #} &#125;
+
+specialchars=["«","»","—","‘","’","“","”","„",]
+
 
 subs=["d'￭","m'￭","n'￭","p'￭","qu'￭","s'￭","t'￭","l'￭","￭-y","￭-yse","￭-ys","￭-yos","￭-la","￭-lo","￭-lu","￭-los","￭-les"]
 
@@ -107,6 +110,17 @@ def main_tokenizer(segment):
         if cadena.find(pmod)==-1:
             pmod2=" ￭"+p
             cadena=cadena.replace(p,pmod2)
+            
+    for p in specialchars:
+        pmod=p+" "
+        if cadena.find(pmod)==-1:
+            pmod2=p+"￭ "
+            cadena=cadena.replace(p,pmod2)
+        pmod=" "+p
+        if cadena.find(pmod)==-1:
+            pmod2=" ￭"+p
+            cadena=cadena.replace(p,pmod2)
+            
     return(cadena[1:-1])
     
     return(cadena)

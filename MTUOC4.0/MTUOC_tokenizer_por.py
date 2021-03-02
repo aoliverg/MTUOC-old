@@ -1,5 +1,5 @@
-#    MTUOC_tokenizer_por 3.1
-#    Copyright (C) 2020  Antoni Oliver
+#    MTUOC_tokenizer_por 4.0
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import html
 #{ &#123;
 #} &#125;
 
-subs=["￭'s"]
+specialchars=["«","»","—","‘","’","“","”","„",]
 
 subs=['fá￭-￭la', 'fá￭-￭las', 'fá￭-￭lo', 'fá￭-￭los', 'fê￭-￭la', 'fê￭-￭las', 'fê￭-￭lo', 'fê￭-￭los', 'fi￭-￭la', 'fi￭-￭las', 'fi￭-￭lo', 'fi￭-￭los', 'pu￭-￭la', 'pu￭-￭las', 'pu￭-￭lo', 'pu￭-￭los', 'qui￭-￭la', 'qui￭-￭las', 'qui￭-￭lo', 'qui￭-￭los']
 
@@ -107,6 +107,17 @@ def main_tokenizer(segment):
         if cadena.find(pmod)==-1:
             pmod2=" ￭"+p
             cadena=cadena.replace(p,pmod2)
+            
+    for p in specialchars:
+        pmod=p+" "
+        if cadena.find(pmod)==-1:
+            pmod2=p+"￭ "
+            cadena=cadena.replace(p,pmod2)
+        pmod=" "+p
+        if cadena.find(pmod)==-1:
+            pmod2=" ￭"+p
+            cadena=cadena.replace(p,pmod2)
+            
     return(cadena[1:-1])
     
     return(cadena)
