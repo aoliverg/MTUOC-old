@@ -1,4 +1,4 @@
-#    MTUOC_tokenizer_zho_pseudo 3.1
+#    MTUOC_tokenizer_zho_pseudo 4.0
 #    Copyright (C) 2020  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -78,65 +78,112 @@ def unprotect(cadena):
     cadena=cadena.replace("&#39;","'").replace("&#45;","-").replace("&#60;","<").replace("&#62;",">").replace("&#34;",'"').replace("&#61;","=").replace("&#32;","▁").replace("&#47;","/").replace("&#123;","{").replace("&#125;","}")
     return(cadena)
 
-def tokenize(segment):
-    seg_list=spliteKeyWord(segment)
-    tokenized = " ".join(list(seg_list))
-    return(tokenized)
-    
-def detokenize(segment):
-    desegment=segment.replace(" ","")
-    return(desegment)
 
-def tokenize_j(segment):
-    seg_list=spliteKeyWord(segment)
-    tokenized = " ￭".join(list(seg_list))
-    return(tokenized) 
 
-def detokenize_j(segment):
-    segment=segment.replace(" ￭","")
-    segment=segment.replace("￭ ","")
-    segment=segment.replace("￭","")
-    detok=segment
-    return(detok)
-    
-def tokenize_jn(segment):
-    seg_list=spliteKeyWord(segment)
-    tokenized = " ￭".join(list(seg_list))
-    tokenized=split_numbers(tokenized)
-    return(tokenized)
+class Tokenizer():
+    def __init__(self):
+        self.specialchars=["«","»","—","‘","’","“","”","„",]
+        self.subs=["￭'s","￭'ll","￭'t","￭'cause","￭'d","￭'em","￭'ve","￭'dn","￭'m","￭'n","￭'re","￭'til","￭'tween","￭'all","ol'￭"]
+        self.re_num = re.compile(r'[\d\,\.]+')
 
-def detokenize_jn(segment):
-    segment=detokenize_j(segment)
-    return(segment)
-    
-def tokenize_s(segment):
-    seg_list=spliteKeyWord(segment)
-    tokenized = " ￭".join(list(seg_list))
-    tokenized=tokenized.replace("￭ ","￭")
-    tokenized=tokenized.replace(" ￭","￭")
-    tokenized=tokenized.replace(" "," ▁")
-    tokenized=tokenized.replace("￭"," ")
-    return(tokenized)
-    
-def detokenize_s(segment):
-    segment=segment.replace(" ","")
-    segment=segment.replace("▁"," ")
-    detok=segment
-    return(detok)
+    def split_numbers(self,segment):
+        xifres = re.findall(self.re_num,segment)
+        for xifra in xifres:
+            xifrastr=str(xifra)
+            xifrasplit=xifra.split()
+            xifra2="￭ ".join(xifra)
+            segment=segment.replace(xifra,xifra2)
+        return(segment)
 
-def tokenize_sn(segment):
-    seg_list=spliteKeyWord(segment)
-    tokenized = " ￭".join(list(seg_list))
-    tokenized=split_numbers(tokenized)
-    tokenized=tokenized.replace("￭ ","￭")
-    tokenized=tokenized.replace(" ￭","￭")
-    tokenized=tokenized.replace(" "," ▁")
-    tokenized=tokenized.replace("￭"," ")
-    return(tokenized)
 
-def detokenize_sn(segment):
-    segment=detokenize_s(segment)
-    return(segment)
+
+    def protect_tags(self, segment):
+        tags=re.findall(r'<[^>]+>',segment)
+        for tag in tags:
+            ep=False
+            ef=False
+            if segment.find(" "+tag)==-1:ep=True
+            if segment.find(tag+" ")==-1:ef=True
+            tagmod=tag.replace("<","&#60;").replace(">","&#62;").replace("=","&#61;").replace("'","&#39;").replace('"',"&#34;").replace("/","&#47;").replace(" ","&#32;")
+            if ep: tagmod=" ￭"+tagmod
+            if ef: tagmod=tagmod+"￭ "
+            segment=segment.replace(tag,tagmod)
+        tags=re.findall(r'\{[0-9]+\}',segment)
+        for tag in tags:
+            ep=False
+            ef=False
+            if segment.find(" "+tag)==-1:ep=True
+            if segment.find(tag+" ")==-1:ef=True
+            tagmod=tag.replace("{","&#123;").replace("}","&#125;")
+            if ep: tagmod=" ￭"+tagmod
+            if ef: tagmod=tagmod+"￭ "
+            segment=segment.replace(tag,tagmod)
+        return(segment) 
+
+    def unprotect(self, cadena):
+        cadena=cadena.replace("&#39;","'").replace("&#45;","-").replace("&#60;","<").replace("&#62;",">").replace("&#34;",'"').replace("&#61;","=").replace("&#32;","▁").replace("&#47;","/").replace("&#123;","{").replace("&#125;","}")
+        return(cadena)
+
+
+    def tokenize(self, segment):
+        seg_list=spliteKeyWord(segment)
+        tokenized = " ".join(list(seg_list))
+        return(tokenized)
+        
+    def detokenize(self, segment):
+        desegment=segment.replace(" ","")
+        return(desegment)
+
+    def tokenize_j(self, segment):
+        seg_list=spliteKeyWord(segment)
+        tokenized = " ￭".join(list(seg_list))
+        return(tokenized) 
+
+    def detokenize_j(self, segment):
+        segment=segment.replace(" ￭","")
+        segment=segment.replace("￭ ","")
+        segment=segment.replace("￭","")
+        detok=segment
+        return(detok)
+        
+    def tokenize_jn(self, segment):
+        seg_list=spliteKeyWord(segment)
+        tokenized = " ￭".join(list(seg_list))
+        tokenized=split_numbers(tokenized)
+        return(tokenized)
+
+    def detokenize_jn(self, segment):
+        segment=self.detokenize_j(segment)
+        return(segment)
+        
+    def tokenize_s(self, segment):
+        seg_list=spliteKeyWord(segment)
+        tokenized = " ￭".join(list(seg_list))
+        tokenized=tokenized.replace("￭ ","￭")
+        tokenized=tokenized.replace(" ￭","￭")
+        tokenized=tokenized.replace(" "," ▁")
+        tokenized=tokenized.replace("￭"," ")
+        return(tokenized)
+        
+    def detokenize_s(self, segment):
+        segment=segment.replace(" ","")
+        segment=segment.replace("▁"," ")
+        detok=segment
+        return(detok)
+
+    def tokenize_sn(self, segment):
+        seg_list=spliteKeyWord(segment)
+        tokenized = " ￭".join(list(seg_list))
+        tokenized=split_numbers(tokenized)
+        tokenized=tokenized.replace("￭ ","￭")
+        tokenized=tokenized.replace(" ￭","￭")
+        tokenized=tokenized.replace(" "," ▁")
+        tokenized=tokenized.replace("￭"," ")
+        return(tokenized)
+
+    def detokenize_sn(self, segment):
+        segment=self.detokenize_s(segment)
+        return(segment)
 
 def print_help():
     print("MTUOC_tokenizer_zho_jieba.py A pseduo tokenizer for Chinese, usage:")

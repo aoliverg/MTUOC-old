@@ -31,12 +31,15 @@ def guided_alignment_eflomal(MTUOC="/MTUOC",ROOTNAME_ALI="train.sp",ROOTNAME_OUT
     command="cat tempaliforward-* > "+ROOTNAME_OUT+"."+SL+"."+TL+".align"
     if VERBOSE: print(command)
     os.system(command)
-    command="cat tempalireverse-* > "+ROOTNAME_OUT+"."+TL+"."+SL+".align"
+    #command="cat tempalireverse-* > "+ROOTNAME_OUT+"."+TL+"."+SL+".align"
+    command="cat tempalireverse-* > todelete.align"
     if VERBOSE: print(command)
     os.system(command)
     if VERBOSE: print("Checking guided alignment")
-    check_guided_alignment(FILE1,FILE2,ROOTNAME_OUT+"."+SL+"."+TL+".align",ROOTNAME_OUT+"."+TL+"."+SL+".align")
+    #check_guided_alignment(FILE1,FILE2,ROOTNAME_OUT+"."+SL+"."+TL+".align",ROOTNAME_OUT+"."+TL+"."+SL+".align")
+    check_guided_alignment(FILE1,FILE2,ROOTNAME_OUT+"."+SL+"."+TL+".align","todelete.align")
     listfiles = os.listdir(".")
+    os.remove("todelete.align")
     os.remove(FILEOUT)
     #os.remove(ROOTNAME_OUT+".novalid."+TL+"."+SL+".align")
     for file in listfiles:
