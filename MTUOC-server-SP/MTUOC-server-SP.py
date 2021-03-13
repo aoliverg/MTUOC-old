@@ -1,6 +1,6 @@
 #    MTUOC-server-SP v 4  
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
-#    Copyright (C) 2020  Antoni Oliver
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -14,8 +14,6 @@
 
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-###GENERIC IMPORTS
 
 ###GENERIC IMPORTS
 import sys
@@ -32,9 +30,8 @@ import json
 import pickle
 import sentencepiece as spm
 
-import io
 import lxml
-import lxml.etree as ET
+
 import html
 
 ###YAML IMPORTS
@@ -45,7 +42,14 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
     
-    
+
+def printLOG(vlevel,m1,m2=""):
+    cadena=str(m1)+"\t"+str(m2)+"\t"+str(datetime.now())
+    if vlevel<=verbosity_level:
+        print(cadena)
+        if log_file:
+            sortidalog.write(cadena+"\n")
+
 def startMTEngineThread(startMTEngineCommand):
     if not startMTEngineCommand.endswith("&"):
         command=startMTEngineCommand +" &"
@@ -68,33 +72,7 @@ def get_IP_info():
     finally:
         s.close()    
 
-def has_tags(segment):
-    response=False
-    tagsA = re.findall(r'</?.+?/?>', segment)
-    tagsB = re.findall(r'\{[0-9]+\}', segment)
-    if len(tagsA)>0 or len(tagsB)>0:
-        response=True
-    return(response)
-    
-def is_tag(token):
-    response=False
-    tagsA = re.match(r'</?.+?/?>', token)
-    tagsB = re.match(r'\{[0-9]+\}', token)
-    if tagsA or tagsB:
-        response=True
-    return(response)
-    
-def remove_tags(segment):
-    segmentnotags=re.sub('(<[^>]+>)', "",segment)
-    segmentnotags=re.sub('({[0-9]+})', "",segmentnotags)
-    return(segmentnotags)
-    
-def get_tags(segment):
-    tagsA = re.findall(r'</?.+?/?>', segment)
-    tagsB = re.findall(r'\{[0-9]+\}', segment)
-    tags=tagsA.copy()
-    tags.extend(tagsB)
-    return(tags)
+
 
 ###URLs EMAILs
 
@@ -133,94 +111,15 @@ def restore_URLs(stringA,stringB,code="@URL@"):
         stringB=stringB.replace(code,url,1)
     return(stringB)
 
-###TRUECASING###
-
-def load_tc_model(model):
-    if not model=="None":
-        tc_model = pickle.load(open(model, "rb" ) )
-    else:
-        tc_model={}
-    return(tc_model)
-    
-def truecase(tc_model,tokenizer,line):
-    if tokenizer:
-        tokens=tokenizer.tokenize_j(line).split(" ")
-    else:
-        tokens=splitTags(line)
-    nsegment=[]
-    cont=0
-    for token in tokens:
-        try:
-            leadingsplitter=False
-            trailingsplitter=False
-            leadingjoiner=False
-            trailingjoiner=False
-            if token.startswith("▁"):leadingsplitter=True
-            if token.endswith("▁"):trailingsplitter=True
-            if token.startswith("￭"):leadingjoiner=True
-            if token.endswith("￭"):trailingjoiner=True
-            token=token.replace("▁","")
-            token=token.replace("￭","")
-            try:
-                nlc=tc_model[token.lower()]["lc"]
-            except:
-                nlc=0
-            try:
-                nu1=tc_model[token.lower()]["u1"]
-            except:
-                nu1=0
-            try:
-                nuc=tc_model[token.lower()]["uc"]
-            except:
-                nuc=0
-            
-            if nlc>0 and nlc>=nu1 and nlc>=nuc:
-                token=token.lower()
-            elif nu1>0 and nu1>nlc and nu1>nuc:
-                token=token.lower().capitalize()
-            elif nuc>0 and nuc>nlc and nuc>nu1:
-                token=token.upper()
-            if cont==1:
-                token=token.capitalize()
-            if leadingsplitter:token="▁"+token
-            if trailingsplitter:token=token+"▁"
-            if leadingjoiner:token="￭"+token
-            if trailingjoiner:token=token+"￭"
-            nsegment.append(token)
-        except:
-            nsegment.append(token)
-    if tokenizer:
-        
-        nsegment=tokenizer.detokenize_j(" ".join(nsegment))     
-    else:
-        nsegment=" ".join(nsegment)
-    return(nsegment)
-
-def detruecase(line,tokenizer):
-    tokens=line.split(" ")
-    new=[]
-    yet=False
-    if tokenizer:
-        tokens=tokenizer.tokenize_j(line).split(" ")
-    else:
-        tokens=line.split(" ")
-    for token in tokens:
-        if not yet and token.isalpha():
-            yet=True
-            new.append(token[0].upper()+token[1:])
-        else:
-            new.append(token)
-    line=" ".join(new)
-    detrue=tokenizer.detokenize_j(line)
-    return(line)
 
 #PREPROCESSING AND POSTPROCESSING
 
-def to_MT_SP(segment,tokenizer,tcmodel,spmodel, vocab, bos="<s>", eos='</s>'):
-    hastags=has_tags(segment)
+def to_MT_SP(segment,tokenizer,truecaser,spmodel, vocab, bos="<s>", eos='</s>'):
+    hastags=tagrestorer.has_tags(segment)
     segment=segment.strip()
-    if not tcmodel==None:        
-        segmenttrue=truecase(tcmodel,tokenizer,segment)
+    if not truecaser==None:        
+        segmenttrue=truecaser.truecase(segment)
+        printLOG(3,"Segment TC",segmenttrue)
     else:
         segmenttrue=segment
     
@@ -229,9 +128,9 @@ def to_MT_SP(segment,tokenizer,tcmodel,spmodel, vocab, bos="<s>", eos='</s>'):
     else:
         output=[]
         if not bos==None: output.append("<s>")
-        segmenttrue=tokenizer.tokenize(segmenttrue)
-        for t in splitTags(segmenttrue):
-            if not is_tag(t):
+        segmenttrue=tokenizerSL.tokenize(segmenttrue)
+        for t in tagrestorer.splitTags(segmenttrue):
+            if not tagrestorer.is_tag(t):
                 sptok=" ".join(sp2.encode(t))
                 output.append(sptok)
             else:
@@ -240,7 +139,7 @@ def to_MT_SP(segment,tokenizer,tcmodel,spmodel, vocab, bos="<s>", eos='</s>'):
     output=" ".join(output)
     return(output)
 
-def from_MT_SP(segment, tokenizer, joiner="▁",bos="<s>", eos="</s>"):
+def from_MT_SP(sourcesegment,segment, tokenizer, joiner="▁",bos="<s>", eos="</s>"):
     if not bos=="None":
         segment=segment.replace(bos,"")
     if not eos=="None":
@@ -259,7 +158,15 @@ def from_MT_SP(segment, tokenizer, joiner="▁",bos="<s>", eos="</s>"):
             tagmod=tag.replace(" ","&#32;")
             segment=segment.replace(tagmod,tag,1)
     segment=segment.strip()
-    segmenttrue=detruecase(segment,tokenizer)
+    ssfch=""
+    for char in sourcesegment:
+        if char.isalpha():
+            ssfch=char 
+            break
+    if ssfch==ssfch.upper():
+        segmenttrue=truecaser.detruecase(segment,tokenizer)
+    else:
+        segmenttrue=segment
     segmentdetok=tokenizer.detokenize_j(segmenttrue)
     tags=re.findall(r'<[^>]+>',segmentdetok)
     for tag in tags:
@@ -269,404 +176,96 @@ def from_MT_SP(segment, tokenizer, joiner="▁",bos="<s>", eos="</s>"):
     segmentdetok=segmentdetok.strip()
     return(segmentdetok)
 
-###
-
-def splitTags(segment):
-    tags=re.findall('(<[^>]+>)', segment)
-    for tag in tags:
-        tagmod=tag.replace(" ","_")
-        segment=segment.replace(tag,tagmod)
-    slist=segment.split(" ")
-    for i in range(0,len(slist)):
-        slist[i]=slist[i].replace("_"," ")
-    return(slist)
-    
-def removeSpeChar(llista,spechar):
-    for i in range(0,len(llista)):
-        llista[i]=llista[i].replace(spechar,"")
-    return(llista)
-        
-
-def restore_tags(SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNOTAGSTOKSP, spechar="▁", bos="<s>", eos="</s>"):
-    relations={}
-    for t in SELECTEDALIGNMENT.split(" "):
-        camps=t.split("-")
-        if not int(camps[0]) in relations:
-            relations[int(camps[0])]=[]
-        relations[int(camps[0])].append(int(camps[1]))
-    f = io.BytesIO(SOURCETAGSTOKSP.encode('utf-8'))
-    events = ("start", "end")
-    context = ET.iterparse(f, events=events,recover=True)
-    cont_g=-1
-    tags=[]
-    tagpairs=[]
-    LISTSOURCETAGSTOKSP=splitTags(SOURCETAGSTOKSP)
-    LISTSOURCETAGSTOK=removeSpeChar(LISTSOURCETAGSTOKSP,spechar)
-    LISTSOURCENOTAGSTOKSP=splitTags(SOURCENOTAGSTOKSP)
-    LISTTARGETNOTAGSTOKSP=splitTags(TARGETNOTAGSTOKSP)
-    TEMPLIST=LISTSOURCETAGSTOKSP
-    charbefore={}
-    charafter={}
-    for event, elem in context:
-        if not elem.tag=="s":
-            tag=elem.tag
-            attr=elem.items()
-            if event=="start":
-                if len(attr)==0:
-                    xmltag="<"+tag+">"
-                    if SOURCETAGSTOKSP.find(xmltag)>-1: tags.append(xmltag)
-                else:
-                    lat=[]
-                    for at in attr:
-                        cadena=at[0]+"='"+str(at[1])+"'"
-                        lat.append(cadena)
-                    cat=" ".join(lat)
-                    xmltag1="<"+tag+" "+cat+">"
-                    if SOURCETAGSTOKSP.find(xmltag1)>-1: 
-                        tags.append(xmltag1)
-                        xmltag=xmltag1
-                        
-                    lat=[]
-                    for at in attr:
-                        cadena=at[0]+'="'+str(at[1])+'"'
-                        lat.append(cadena)
-                    cat=" ".join(lat)
-                    xmltag2="<"+tag+" "+cat+">"
-                    if SOURCETAGSTOKSP.find(xmltag2)>-1: 
-                        tags.append(xmltag2)
-                        xmltag=xmltag2
-                        
-                closingtag="</"+tag+">"
-                if SOURCETAGSTOKSP.find(closingtag)>-1: 
-                    tripleta=(xmltag,closingtag,elem.text)
-                    tagpairs.append(tripleta)
-                    
-            elif event=="end":
-                    xmltag="</"+tag+">"
-                    if SOURCETAGSTOKSP.find(xmltag)>-1: 
-                        tags.append(xmltag)
-                        
-                    xmltag="<"+tag+"/>"
-                    if SOURCETAGSTOKSP.find(xmltag)>-1: 
-                        tags.append(xmltag)
-                
-    preTags=[]
-    postTags=[]
-    for xmltag in tags:
-        if SOURCETAGSTOKSP.find(xmltag)>-1: 
-            chbf=SOURCETAGSTOKSP[SOURCETAGSTOKSP.index(xmltag)-1]
-            charbefore[xmltag]=chbf
-            chaf=SOURCETAGSTOKSP[SOURCETAGSTOKSP.index(xmltag)+len(xmltag)]
-            charafter[xmltag]=chaf
-    
-    tagsCHAR={}
-    
-    for tag in tags:
-        tagC=tag
-        if tag in charbefore:
-            cb=charbefore[tag].strip()
-            tagC=cb+tag
-            
-        if tag in charafter:
-            ca=charafter[tag].strip()
-            tagC=tagC+ca
-        tagsCHAR[tag]=tagC
-    
-    for i in range(0,len(LISTTARGETNOTAGSTOKSP)+1):
-        preTags.insert(i,None)
-        postTags.insert(i,None)
-    
-    for tripleta in tagpairs:
-        #source positions
-        sourcepositions=[]
-        for ttrip in tripleta[2].strip().split(" "):
-            try:
-                postemp=LISTSOURCENOTAGSTOKSP.index(ttrip.strip())
-                sourcepositions.append(postemp)
-            except:
-                pass
-        try:
-            tags.remove(tripleta[0])
-            TEMPLIST.remove(tripleta[0])
-                    
-        except:
-            pass
-        try:
-            tags.remove(tripleta[1])
-            TEMPLIST.remove(tripleta[1])
-        except:
-            pass
-        #target positions
-        targetpositions=[]
-        for position in sourcepositions:
-            if position in relations: targetpositions.extend(relations[position])
-            
-        
-        preTags[min(targetpositions)]=tagsCHAR[tripleta[0]]
-        
-        postTags[max(targetpositions)]=tagsCHAR[tripleta[1]]
-
-    #isolated tags
-    for tag in tags:
-        try:
-            preTags[relations[TEMPLIST.index(tag)][0]]=tag
-            TEMPLIST.remove(tag)
-        except:
-            pass
-    
-    LISTTARGETTAGSTOKSP=[]
-    for i in range(0,len(LISTTARGETNOTAGSTOKSP)):
-        try:
-            if preTags[i]:
-                LISTTARGETTAGSTOKSP.append(preTags[i])
-            LISTTARGETTAGSTOKSP.append(LISTTARGETNOTAGSTOKSP[i])
-            if postTags[i]:
-                LISTTARGETTAGSTOKSP.append(postTags[i])
-        except:
-            pass
-    translationTagsSP=" ".join(LISTTARGETTAGSTOKSP)
-    return(translationTagsSP)
-
-def repairSpacesTags(slsegment,tlsegment,delimiters=[" ",".",",",":",";","?","!"]):
-    sltags=get_tags(slsegment)
-    tltags=get_tags(tlsegment)
-    commontags=list(set(sltags).intersection(tltags))
-    for tag in commontags:
-        try:
-            tagaux=tag
-            chbfSL=slsegment[slsegment.index(tag)-1]
-            chbfTL=tlsegment[tlsegment.index(tag)-1]
-            tagmod=tag
-            if chbfSL in delimiters and chbfTL not in delimiters:
-                tagmod=" "+tagmod
-            if not chbfSL in delimiters and chbfTL in delimiters:
-                tagaux=" "+tagaux
-            try:
-                chafSL=slsegment[slsegment.index(tag)+len(tag)]
-            except:
-                pass
-            try:
-                chafTL=tlsegment[tlsegment.index(tag)+len(tag)]
-            except:
-                pass
-            if chafSL in delimiters and not chafTL in delimiters:
-                tagmod=tagmod+" "
-            if not chafSL in delimiters and chafTL in delimiters:
-                tagaux=tagaux+" "
-            #slsegment=slsegment.replace(tagaux,tagmod,1)
-            tlsegment=tlsegment.replace(tagaux,tagmod,1)
-            tlsegment=tlsegment.replace("  "+tag," "+tag,1)
-            tlsegment=tlsegment.replace(tag+"  ",tag+" ",1)
-            
-        except:
-            print("ERROR in tag:",tag)
-    return(tlsegment)
-
-###
-
-def lreplace(pattern, sub, string):
-    """
-    Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
-    """
-    return re.sub('^%s' % pattern, sub, string)
-
-def rreplace(pattern, sub, string):
-    """
-    Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
-    """
-    return re.sub('%s$' % pattern, sub, string)
-
-
-def has_tags(segment):
-    response=False
-    tagsA = re.findall(r'</?.+?/?>', segment)
-    tagsB = re.findall(r'\{[0-9]+\}', segment)
-    if len(tagsA)>0 or len(tagsB)>0:
-        response=True
-    return(response)
-    
-def is_tag(token):
-    response=False
-    tagsA = re.match(r'</?.+?/?>', token)
-    tagsB = re.match(r'\{[0-9]+\}', token)
-    if tagsA or tagsB:
-        response=True
-    return(response)
-    
-def remove_tags(segment):
-    segmentnotags=re.sub('(<[^>]+>)', "",segment)
-    segmentnotags=re.sub('({[0-9]+})', "",segmentnotags)
-    return(segmentnotags)
-    
-def get_name(tag):
-    name=tag.split(" ")[0].replace("<","").replace(">","").replace("/","")
-    return(name)
-
-def group_tags(segment):
-    tagsGAaux= re.findall(r'((</?[^>]+?/?>\s?){2,})', segment)
-    tagsG=[]
-    for t in tagsGAaux:
-        tagsG.append(t[0])
-    tagsGBaux= re.findall(r'((\{[0-9]+\}\s?){2,})', segment)
-    for t in tagsGBaux:
-        tagsG.append(t[0])
-    
-    conttag=0
-    equil={}
-    for t in tagsG:
-        trep="<tagG"+str(conttag)+">"
-        segment=segment.replace(t,trep)
-        equil[trep]=t
-        conttag+=1
-    
-    
-    return(segment,equil)
-
-def replace_tags(segment):
-    equil={}
-    if has_tags(segment):
-        tagsA = re.findall(r'</?.+?/?>', segment)
-        tagsB = re.findall(r'\{[0-9]+\}', segment)
-        tags=tagsA.copy()
-        tags.extend(tagsB)
-        conttag=0
-        for tag in tags:
-            tagrep="<tag"+str(conttag)+">"
-            segment=segment.replace(tag,tagrep,1)
-            equil[tagrep]=tag
-            if tag in tagsA:
-                tagclose="</"+get_name(tag)+">"
-                tagcloserep="</tag"+str(conttag)+">"
-                if segment.find(tagclose)>-1:
-                    segment=segment.replace(tagclose,tagcloserep)
-                    equil[tagcloserep]=tagclose
-                    tags.remove(tagclose)
-            conttag+=1
-            
-        return(segment,equil)
-        
-    else:
-        return(segment,equil)
-        
-def remove_start_end_tag(segment):
-    try:
-        starttag=re.match("</?tag[0-9]+>",segment)
-        starttag=starttag.group()
-    except:
-        starttag=None
-    try:
-        endtag=re.search("</?tag[0-9]+>$",segment)
-        endtag=endtag.group()
-    except:
-        endtag=None
-    if starttag:
-        segment=lreplace(starttag,"",segment)
-    if endtag:
-        segment=rreplace(endtag,"",segment)
-    return(segment,starttag,endtag)
-###
-
-
 def translate(segment):
     #function for Moses server
-    print("Translating: ",segment['text'])
     translation=translate_segment(segment['text'])
-    print("Translation: ",translation)
     translationdict={}
     translationdict["text"]=translation
     return(translationdict)
 
 def translate_segment(segment):
     try:
+        printLOG(1,"Source segment:",segment)    
         if unescape_html:
             segment=html.unescape(segment)
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment: "+"\t"+segment)
+            printLOG(3,"Unescaped segment:",segment)
         #leading and trailing spaces
         leading_spaces=len(segment)-len(segment.lstrip())
         trailing_spaces=len(segment)-len(segment.rstrip())-1
         segment=segment.lstrip().rstrip()
         ###Pretractament dels tags
-        (segmentTAGS,equilG)=group_tags(segment)
-        print(segmentTAGS)
-        print("EQUILG",equilG)
-        (segmentTAGS,equil)=replace_tags(segmentTAGS)
-        print(segmentTAGS)
-        print("EQUILG",equil)
+        (segmentTAGS,equilG)=tagrestorer.group_tags(segment)
+        (segmentTAGS,equil)=tagrestorer.replace_tags(segmentTAGS)
         
         tagInici=""
         tagFinal=""
-        (segmentTAGS,tagInici,tagFinal)=remove_start_end_tag(segmentTAGS)
-        
-        segmentNOTAGS=remove_tags(segment)
+        (segmentTAGS,tagInici,tagFinal)=tagrestorer.remove_start_end_tag(segmentTAGS)
+        if not tagInici=="": printLOG(3,"Starting tag:",tagInici)
+        if not tagFinal=="": printLOG(3,"Ending tag:",tagFinal)
+        segmentNOTAGS=tagrestorer.remove_tags(segment)
         if MTUOCServer_EMAILs:
             segmentNOTAGS=replace_EMAILs(segmentNOTAGS)
         if MTUOCServer_URLs:
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
-        if MTUOCServer_verbose and not segmentNOTAGS==segment: print(str(datetime.now())+"\t"+"SL segment NO TAGS: "+"\t"+segmentNOTAGS)
-        segmentPRENOTAGS=to_MT_SP(segmentNOTAGS,tokenizer,ltcmodel,spmodel,vocab)
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"SL segment PRE NO TAGS: "+"\t"+segmentPRENOTAGS)
-        segmentPRETAGS=to_MT_SP(segmentTAGS,tokenizer,ltcmodel,spmodel,vocab)
-        if MTUOCServer_verbose and not segmentPRENOTAGS==segmentPRETAGS: print(str(datetime.now())+"\t"+"SL segment PRE TAGS: "+"\t"+segmentPRETAGS)
-        hastags=has_tags(segment)
+        segmentPRENOTAGS=to_MT_SP(segmentNOTAGS,tokenizerSL,truecaser,spmodel,spvocab)
+        printLOG(2,"Segment Pre. No Tags:",segmentPRENOTAGS)
+        segmentPRETAGS=to_MT_SP(segmentTAGS,tokenizerSL,truecaser,spmodel,spvocab)
+        if not segmentPRETAGS==segmentPRENOTAGS: printLOG(3,"Segment Pre. Tags:",segmentPRETAGS)
+        hastags=tagrestorer.has_tags(segment)
         if MTUOCServer_MTengine=="Marian":
-                (selectedtranslationPre, selectedalignment)=translate_segment_Marian(segmentPRENOTAGS)
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE: "+"\t"+selectedtranslationPre)
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"alignment: "+"\t"+selectedalignment)
+            (selectedtranslationPre, selectedalignment)=translate_segment_Marian(segmentPRENOTAGS)
+        elif MTUOCServer_MTengine=="OpenNMT":
+            print("TRANSLATING WITH OPENNMT")
+            (selectedtranslationPre, selectedalignment)=translate_segment_OpenNMT(segmentPRENOTAGS)
+            print("TRANSLATION",selectedtranslationPre)
+        ###TO DO IMPLEMENT OTHER MT SYSTEMS: OpenNMT and ModernMT        
+        
         #restoring tags
         if MTUOCServer_restore_tags and hastags:
-            selectedtranslationTags=restore_tags(segmentPRENOTAGS, segmentPRETAGS, selectedalignment, selectedtranslationPre, spechar="▁")
-            if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE TAGS: "+"\t"+selectedtranslationTags)
+            selectedtranslationTags=tagrestorer.restore_tags(segmentPRENOTAGS, segmentPRETAGS, selectedalignment, selectedtranslationPre, spechar="▁")
+            printLOG(2,"Translation Restored Tags:",selectedtranslationTags)
         else:
             selectedtranslationTags=selectedtranslationPre
-            if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation PRE: "+"\t"+selectedtranslationTags)
-        
-        
-
-        
         
         #Leading and trailing tags
-        selectedtranslationTags=from_MT_SP(selectedtranslationTags,detokenizer)
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation: "+"\t"+selectedtranslationTags)
+        selectedtranslationTags=from_MT_SP(segment,selectedtranslationTags,tokenizerSL)
         if tagInici:
             selectedtranslationTags=tagInici+selectedtranslationTags
         if tagFinal:
             selectedtranslationTags=selectedtranslationTags+tagFinal
         #Restoring real tags
         for t in equil:
-            print("***",t,equil[t])
             selectedtranslationTags=selectedtranslationTags.replace(t,equil[t])
-        print("***",selectedtranslationTags)
         for t in equilG:
-            print("***",t,equilG[t])
             selectedtranslationTags=selectedtranslationTags.replace(t,equilG[t])
-        print("***",selectedtranslationTags)
+        printLOG(2,"Translation Restored Real Tags:",selectedtranslationTags)
         #restoring/removing spaces before and after tags
         if MTUOCServer_restore_tags and hastags:
-            selectedtranslationTags=repairSpacesTags(segment,selectedtranslationTags)
-            if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation restored spaces: "+"\t"+selectedtranslationTags)
+            selectedtranslationTags=tagrestorer.repairSpacesTags(segment,selectedtranslationTags)
         #restoring leading and trailing spaces
         lSP=leading_spaces*" "
         tSP=trailing_spaces*" "
         selectedtranslation=lSP+selectedtranslationTags+tSP
         #restoring case
-        if segment==segment.upper():
-            selectedtranslation=selectedtranslation.upper()
-        else:
-            selectedtranslation=restoreCase(segment, segmentPRENOTAGS, selectedalignment, selectedtranslationPre, selectedtranslation,tokenizer,detokenizer)
-        
+        if MTUOCServer_restore_case:
+            if segment==segment.upper():
+                selectedtranslation=selectedtranslation.upper()
+            elif not selectedalignment=="":
+                selectedtranslation=tagrestorer.restoreCase(segment, segmentPRENOTAGS, selectedalignment, selectedtranslationPre, selectedtranslation,tokenizerSL,tokenizerTL)
+            printLOG(2,"Translation Restored Case:",selectedtranslation)
+            
+                
         if MTUOCServer_EMAILs:
             selectedtranslation=restore_EMAILs(segment,selectedtranslation)
         if MTUOCServer_URLs:
             selectedtranslation=restore_URLs(segment,selectedtranslation)
         
-        if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"translation restored case: "+"\t"+selectedtranslationTags)
                 
     except:
         print("ERROR:",sys.exc_info())
-        
     if add_trailing_space:
         selectedtranslation=selectedtranslation+" "
-    
+    printLOG(1,"Translation:",selectedtranslation) 
     return(selectedtranslation)
 
 def translate_segment_Marian(segmentPre):
@@ -697,14 +296,19 @@ def translate_segment_Marian(segmentPre):
                 selectedalignment=alignments
                 break
             cont+=1
-    
+    printLOG(2,"Selected translation from Marian:",selectedtranslationPre)
+    printLOG(2,"Selected alignment from Marian:",selectedalignment)
     return(selectedtranslationPre, selectedalignment)
 
+
 def translate_segment_OpenNMT(segmentPre):
+    print("ONMT",segmentPre)
     params = [{ "src" : segmentPre}]
 
     response = requests.post(url, json=params, headers=headers)
+    print("RESPONSE",response)
     target = response.json()
+    print("TARGET",target)
     selectedtranslationPre=target[0][0]["tgt"]
     if "align" in target[0][0]:
         selectedalignment=target[0][0]["align"][0]
@@ -712,41 +316,8 @@ def translate_segment_OpenNMT(segmentPre):
         selectedalignments=""
     
     
-    return(selectedtranslationPre, selectedalignment)
+    return(selectedtranslationPre, selectedalignments)
     
-
-###RESTORE CASE
-def restoreCase(segment, segmentPRENOTAGS, selectedalignment, selectedtranslationPre, selectedtranslation,sltokenizer,tltokenizer):
-    relations={}
-    for t in selectedalignment.split(" "):
-        camps=t.split("-")
-        if not int(camps[0]) in relations:
-            relations[int(camps[0])]=[]
-        relations[int(camps[0])].append(int(camps[1]))
-        slList=segmentPRENOTAGS.split(" ")
-        tlList=selectedtranslationPre.split(" ")
-        relationToks={}
-        for i in range(0,len(slList)):
-            try:
-                sltok=slList[i].replace("▁"," ").strip()
-                tltoks=[]
-                for r in relations[i]:
-                    tltoks.append(tlList[r])
-                relationToks[sltok]="".join(tltoks).replace("▁"," ").strip()
-                
-                
-            except:
-                pass
-                
-    sltokens=sltokenizer.tokenize(segment)
-    resultat=selectedtranslation
-    for sltok in sltokens.split(" "):
-        if sltok==sltok.upper() and not sltok==sltok.lower():
-            if sltok.lower() in relationToks:
-                tltok=relationToks[sltok.lower()]
-                resultat=resultat.replace(tltok,tltok.upper(),1)
-    return(resultat)
-
 if len(sys.argv)==1:
     configfile="config-server.yaml"
 else:
@@ -768,7 +339,10 @@ if startMTEngine:
 
 MTUOCServer_port=config["MTUOCServer"]["port"]
 MTUOCServer_type=config["MTUOCServer"]["type"]
-MTUOCServer_verbose=config["MTUOCServer"]["verbose"]
+verbosity_level=int(config["MTUOCServer"]["verbosity_level"])
+log_file=config["MTUOCServer"]["log_file"]
+if log_file:
+    sortidalog=codecs.open(log_file,"a",encoding="utf-8")
 MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
 MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
 MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
@@ -779,8 +353,8 @@ MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
 
 sllang=config["Preprocess"]["sl_lang"]
 tllang=config["Preprocess"]["tl_lang"]
-MTUOCtokenizer=config["Preprocess"]["sl_tokenizer"]
-MTUOCdetokenizer=config["Preprocess"]["tl_tokenizer"]
+MTUOCtokenizerSL=config["Preprocess"]["sl_tokenizer"]
+MTUOCtokenizerTL=config["Preprocess"]["tl_tokenizer"]
 spmodel=config["Preprocess"]["sp_model_SL"]
 spvocab=config["Preprocess"]["sp_vocabulary_SL"]
 spvocabulary_threshold=config["Preprocess"]["sp_vocabulary_threshold"]
@@ -789,20 +363,30 @@ bos_annotate=config["Preprocess"]["bos_annotate"]
 eos_annotate=config["Preprocess"]["eos_annotate"]
 sp_joiner=config["Preprocess"]["sp_joiner"]
 
+if tcmodel:
+    from MTUOC_truecaser import Truecaser
+    truecaser=Truecaser(tokenizer=MTUOCtokenizerSL,tc_model=tcmodel)
+else:
+    truecaser=None
 
 if not MTUOCServer_MTengine=="ModernMT":
-    spec = importlib.util.spec_from_file_location('', MTUOCtokenizer)
-    tokenizer = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tokenizer)
-    
-    spec = importlib.util.spec_from_file_location('', MTUOCdetokenizer)
-    detokenizer = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(detokenizer)
-    
-    #loading truecasing model
-    if not tcmodel==None:
-        ltcmodel=load_tc_model(tcmodel)
+    if not MTUOCtokenizerSL.endswith(".py"): MTUOCtokenizerSL=MTUOCtokenizerSL+".py"
 
+    spec = importlib.util.spec_from_file_location('', MTUOCtokenizerSL)
+    tokenizerSLmod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tokenizerSLmod)
+    tokenizerSL=tokenizerSLmod.Tokenizer()
+    
+    if not MTUOCtokenizerTL.endswith(".py"): MTUOCtokenizerTL=MTUOCtokenizerTL+".py"
+
+    spec = importlib.util.spec_from_file_location('', MTUOCtokenizerTL)
+    tokenizerTLmod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tokenizerTLmod)
+    tokenizerTL=tokenizerTLmod.Tokenizer()
+    
+    from MTUOC_tags import TagRestorer
+    tagrestorer=TagRestorer()
+    
     #vocabulary restriction
     if not spvocabulary_threshold==None:
         vocab=[]
@@ -831,13 +415,14 @@ if MTUOCServer_MTengine=="Marian":
     while error:
         try:
             ws = create_connection(service)
-            print("Connection with Marian Server created")
+            printLOG(0,"Connection with Marian Server created","")
             error=False
         except:
-            print("Error: waiting for Marian server to start. Retrying in 5 seconds.")
+            printLOG(0,"Error: waiting for Marian server to start. Retrying in 5 seconds.","")
             time.sleep(5)
             error=True
             
+           
 elif MTUOCServer_MTengine=="OpenNMT":
     import requests
     url = "http://"+MTEngineIP+":"+str(MTEnginePort)+"/translator/translate"
@@ -851,22 +436,14 @@ if MTUOCServer_type=="MTUOC":
     
     class MTUOC_server(WebSocket):
         def handleMessage(self):
-            if MTUOCServer_verbose: print("--------------------")
-            if MTUOCServer_verbose: print(str(datetime.now())+"\t"+"Start: "+"\t"+self.data)
             self.translation=translate_segment(self.data)
             self.sendMessage(self.translation)
 
         def handleConnected(self):
-            if MTUOCServer_verbose:
-                print(str(datetime.now())+"\t"+'Connected to: '+"\t"+self.address[0].split(":")[-1])
-            else:
-                pass
+            printLOG(0,'Connected to: ',self.address[0].split(":")[-1])
 
         def handleClose(self):
-            if MTUOCServer_verbose:
-                print(str(datetime.now())+"\t"+'Disconnected from:'+"\t"+self.address[0].split(":")[-1])
-            else:
-                pass
+            printLOG(0,'Disconnected from: ',self.address[0].split(":")[-1])
     server = SimpleWebSocketServer('', MTUOCServer_port, MTUOC_server)
     ip=get_IP_info()
     print("MTUOC server IP:",ip," port:",MTUOCServer_port)
@@ -939,7 +516,6 @@ elif MTUOCServer_type=="NMTWizard":
         def translateONMT():
             inputs = request.get_json(force=True)
             sourcetext=inputs["src"][0]["text"]
-            if MTUOCServer_verbose:print("Translating",sourcetext)
             try:
                 targettext=translate_segment(sourcetext)
                 out={"tgt": [[{"text": targettext}]]}
@@ -962,7 +538,7 @@ elif MTUOCServer_type=="ModernMT":
     def start(
               url_root="",
               host="",
-              port=8000,
+              port=MTUOCServer_port,
               debug=True):
         def prefix_route(route_function, prefix='', mask='{0}{1}'):
             def newroute(route, *args, **kwargs):

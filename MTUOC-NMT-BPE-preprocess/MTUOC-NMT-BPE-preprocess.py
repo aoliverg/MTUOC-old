@@ -1,5 +1,5 @@
 #    MTUOC-NMT-SP-preprocess
-#    Copyright (C) 2020  Antoni Oliver
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -70,8 +70,7 @@ BPE_DROPOUT_P=config["BPE_DROPOUT_P"]
 GUIDED_ALIGNMENT=config["GUIDED_ALIGNMENT"]
 ALIGNER=config["ALIGNER"]
 #one of eflomal, fast_align
-#BOTH_DIRECTIONS: True 
-#only for fast_align, eflomal aligns always the two directions at the same time
+
 DELETE_EXISTING=config["DELETE_EXISTING"]
 DELETE_TEMP=config["DELETE_TEMP"]
 SPLIT_LIMIT=config["SPLIT_LIMIT"]

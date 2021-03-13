@@ -1,7 +1,8 @@
 MTEngine:
     MTengine: Marian
     startMTEngine: True
-    startCommand: "./marian-server-GPU -m model.npz -v vocab-en.yml vocab-es.yml -p 8080 --n-best --alignment hard  --normalize 1 &"
+    startCommand: "./marian-server -m model.npz -v vocab-en.yml vocab-es.yml -p 8080 --n-best --alignment hard  --normalize 1 --quiet &"
+    #add --quiet if you don't want to see log from Marian
     IP: localhost
     port: 8080
     #The port is needed for MTUOC-stop-server.py
@@ -12,7 +13,10 @@ MTUOCServer:
   port: 8000
   type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
-  verbose: True
+  verbosity_level: 3
+  log_file: None
+  #log file path and name or None
+  #0: no verbosity; higher more detailed
   restore_tags: True
   restore_case: True
   URLs: True

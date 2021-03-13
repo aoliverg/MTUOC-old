@@ -17,7 +17,15 @@
 import sys
 import importlib
 import codecs
+from datetime import datetime
 
+def escapeforMoses(segment):
+    segment=segment.replace("[","&lbrack;")
+    segment=segment.replace("]","&rbrack;")    
+    segment=segment.replace("|","&verbar;")
+    segment=segment.replace("<","&lt;")
+    segment=segment.replace(">","&gt;")
+    return(segment)
 
 ###YAML IMPORTS
 import yaml
@@ -39,11 +47,13 @@ config=yaml.load(stream, Loader=yaml.FullLoader)
 MTUOC=config["MTUOC"]
 sys.path.append(MTUOC)
 from MTUOC_replacenumbers import replace
+
 trainPreCorpus=config["trainPreCorpus"]
 valPreCorpus=config["valPreCorpus"]
 
 SL=config["SL"]
 TL=config["TL"]
+
 
 #VERBOSE
 VERBOSE=config["VERBOSE"]
@@ -51,25 +61,30 @@ VERBOSE=config["VERBOSE"]
 SL_TOKENIZER=config["SL_TOKENIZER"]
 TL_TOKENIZER=config["TL_TOKENIZER"]
 
+command="from "+SL_TOKENIZER+" import Tokenizer as TokenizerSL"
+exec(command)
+tokenizerSL=TokenizerSL()
+
+command="from "+TL_TOKENIZER+" import Tokenizer as TokenizerTL"
+exec(command)
+tokenizerTL=TokenizerTL()
+
+
 REPLACE_NUM=config["REPLACE_NUM"]
 NUM_CODE=config["NUM_CODE"]
+
+ESCAPE_FOR_MOSES=config["ESCAPE_FOR_MOSES"]
+
+DELETE_TEMP=config["DELETE_TEMP"]
 
 
 if not SL_TOKENIZER.endswith(".py"): SL_TOKENIZER=SL_TOKENIZER+".py"
 SL_TOKENIZER=MTUOC+"/"+SL_TOKENIZER
 
-spec = importlib.util.spec_from_file_location('', SL_TOKENIZER)
-tokenizerSL = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(tokenizerSL)
-
 if not TL_TOKENIZER.endswith(".py"): TL_TOKENIZER=TL_TOKENIZER+".py"
 TL_TOKENIZER=MTUOC+"/"+TL_TOKENIZER
 
-spec = importlib.util.spec_from_file_location('', TL_TOKENIZER)
-tokenizerTL = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(tokenizerTL)
-
-
+if VERBOSE: print("Processing TRAIN corpus",datetime.now())
 entrada=codecs.open(trainPreCorpus,"r",encoding="utf-8")
 sortidaSL=codecs.open("train.smt."+SL,"w",encoding="utf-8")
 sortidaTL=codecs.open("train.smt."+TL,"w",encoding="utf-8")
@@ -78,17 +93,28 @@ for linia in entrada:
     linia=linia.rstrip()
     camps=linia.split("\t")
     try:
-        sltok=tokenizerSL.tokenize(camps[0])
-        tltok=tokenizerTL.tokenize(camps[1])
+        if ESCAPE_FOR_MOSES:
+            sls=escapeforMoses(camps[0])
+            tls=escapeforMoses(camps[1])
+        else:
+            sls=camps[0]
+            tls=camps[1]
+        sltok=tokenizerSL.tokenize(sls)
+        tltok=tokenizerTL.tokenize(tls)
         if REPLACE_NUM:
             sltok=replace(sltok,NUM_CODE)
             tltok=replace(tltok,NUM_CODE)            
         sortidaSL.write(sltok+"\n")
         sortidaTL.write(tltok+"\n")
     except:
-        print("ROO",sys.exc_info())
+        print("Error",sys.exc_info())
         pass
-        
+
+entrada.close()
+sortidaSL.close()
+sortidaTL.close()
+
+if VERBOSE: print("Processing VAL corpus",datetime.now())        
 entrada=codecs.open(valPreCorpus,"r",encoding="utf-8")
 sortidaSL=codecs.open("val.smt."+SL,"w",encoding="utf-8")
 sortidaTL=codecs.open("val.smt."+TL,"w",encoding="utf-8")
@@ -97,8 +123,14 @@ for linia in entrada:
     linia=linia.rstrip()
     camps=linia.split("\t")
     try:
-        sltok=tokenizerSL.tokenize(camps[0])
-        tltok=tokenizerTL.tokenize(camps[1])
+        if ESCAPE_FOR_MOSES:
+            sls=escapeforMoses(camps[0])
+            tls=escapeforMoses(camps[1])
+        else:
+            sls=camps[0]
+            tls=camps[1]
+        sltok=tokenizerSL.tokenize(sls)
+        tltok=tokenizerTL.tokenize(tls)
         if REPLACE_NUM:
             sltok=replace(sltok,NUM_CODE)
             tltok=replace(tltok,NUM_CODE)            
@@ -107,3 +139,7 @@ for linia in entrada:
     except:
         pass
         
+entrada.close()
+sortidaSL.close()
+sortidaTL.close()
+

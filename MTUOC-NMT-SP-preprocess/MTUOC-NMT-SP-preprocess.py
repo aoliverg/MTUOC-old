@@ -1,5 +1,5 @@
 #    MTUOC-NMT-SP-preprocess
-#    Copyright (C) 2020  Antoni Oliver
+#    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -68,8 +68,7 @@ eos=config["eos"]
 GUIDED_ALIGNMENT=config["GUIDED_ALIGNMENT"]
 ALIGNER=config["ALIGNER"]
 #one of eflomal, fast_align
-#BOTH_DIRECTIONS: True 
-#only for fast_align, eflomal aligns always the two directions at the same time
+
 DELETE_EXISTING=config["DELETE_EXISTING"]
 DELETE_TEMP=config["DELETE_TEMP"]
 SPLIT_LIMIT=config["SPLIT_LIMIT"]
@@ -88,7 +87,7 @@ if VERBOSE:
 
 #SENTENCE PIECE
 
-print("Starting SentencePiece training",datetime.now())
+if VERBOSE: print("Starting SentencePiece training",datetime.now())
 
 entrada=codecs.open(trainPreCorpus,"r",encoding="utf-8")
 sortidaSL=codecs.open("trainPreSL.temp","w",encoding="utf-8")
@@ -123,29 +122,29 @@ sortidaSL.close()
 sortidaTL.close()
 
 if JOIN_LANGUAGES:
-    print("JOIN LANGUAGES",datetime.now())
+    if VERBOSE: print("JOIN LANGUAGES",datetime.now())
     command = "cat trainPreSL.temp trainPreTL.temp | shuf > train"
     os.system(command)
     
-    print("Training SentencePiece model",datetime.now())
+    if VERBOSE: print("Training SentencePiece model",datetime.now())
     command="spm_train --input=train --model_prefix="+SP_MODEL_PREFIX+" --model_type="+MODEL_TYPE+" --vocab_size="+str(VOCAB_SIZE)+" --character_coverage="+str(CHARACTER_COVERAGE)+" --split_digits --input_sentence_size="+str(INPUT_SENTENCE_SIZE)
     os.system(command)
     
-    print("Generating vocabularies",datetime.now())
+    if VERBOSE: print("Generating vocabularies",datetime.now())
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --generate_vocabulary < trainPreSL.temp > vocab_file."+SL
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --generate_vocabulary < trainPreTL.temp > vocab_file."+TL
     os.system(command)
     
 else:
-    print("NOT JOINING LANGUAGES",datetime.now())
-    print("Training source language SentencePiece model",datetime.now())
+    if VERBOSE: print("NOT JOINING LANGUAGES",datetime.now())
+    if VERBOSE: print("Training source language SentencePiece model",datetime.now())
     command="spm_train --input=trainPreSL.temp --model_prefix="+SP_MODEL_PREFIX+"-"+SL+" --model_type="+MODEL_TYPE+" --vocab_size="+str(VOCAB_SIZE)+" --character_coverage="+str(CHARACTER_COVERAGE)+" --split_digits --input_sentence_size="+str(INPUT_SENTENCE_SIZE)
     os.system(command)
-    print("Training target language SentencePiece model",datetime.now())
+    if VERBOSE: print("Training target language SentencePiece model",datetime.now())
     command="spm_train --input=trainPreTL.temp --model_prefix="+SP_MODEL_PREFIX+"-"+TL+" --model_type="+MODEL_TYPE+" --vocab_size="+str(VOCAB_SIZE)+" --character_coverage="+str(CHARACTER_COVERAGE)+" --split_digits --input_sentence_size="+str(INPUT_SENTENCE_SIZE)
     os.system(command)
-    print("Generating vocabularies",datetime.now())
+    if VERBOSE: print("Generating vocabularies",datetime.now())
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+SL+".model --generate_vocabulary < trainPreSL.temp > vocab_file."+SL
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+TL+".model --generate_vocabulary < trainPreTL.temp > vocab_file."+TL
@@ -153,30 +152,30 @@ else:
        
 if JOIN_LANGUAGES:
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --extra_options eos:bos --vocabulary=vocab_file."+SL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < trainPreSL.temp > train.sp."+SL
-    print("Encoding source language training corpus",datetime.now())
+    if VERBOSE: print("Encoding source language training corpus",datetime.now())
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --extra_options eos:bos --vocabulary=vocab_file."+TL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < trainPreTL.temp > train.sp."+TL
-    print("Encoding target language training corpus",datetime.now())
+    if VERBOSE: print("Encoding target language training corpus",datetime.now())
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --extra_options eos:bos --vocabulary=vocab_file."+SL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < valPreSL.temp > val.sp."+SL
-    print("Encoding source language validation corpus",datetime.now())
+    if VERBOSE: print("Encoding source language validation corpus",datetime.now())
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+".model --extra_options eos:bos --vocabulary=vocab_file."+TL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < valPreTL.temp > val.sp."+TL
-    print("Encoding target language validation corpus",datetime.now())
+    if VERBOSE: print("Encoding target language validation corpus",datetime.now())
     os.system(command)
    
 else:
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+SL+".model --extra_options eos:bos --vocabulary=vocab_file."+SL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < trainPreSL.temp > train.sp."+SL
-    print("Encoding source language training corpus",datetime.now())
+    if VERBOSE: print("Encoding source language training corpus",datetime.now())
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+TL+".model --extra_options eos:bos --vocabulary=vocab_file."+TL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < trainPreTL.temp > train.sp."+TL
     os.system(command)
-    print("Encoding target language training corpus",datetime.now())
+    if VERBOSE: print("Encoding target language training corpus",datetime.now())
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+SL+".model --extra_options eos:bos --vocabulary=vocab_file."+SL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < valPreSL.temp > val.sp."+SL
-    print("Encoding source language validation corpus",datetime.now())
+    if VERBOSE: print("Encoding source language validation corpus",datetime.now())
     os.system(command)
     command="spm_encode --model="+SP_MODEL_PREFIX+"-"+TL+".model --extra_options eos:bos --vocabulary=vocab_file."+TL+" --vocabulary_threshold="+str(VOCABULARY_THRESHOLD)+" < valPreTL.temp > val.sp."+TL
-    print("Encoding target language validation corpus",datetime.now())
+    if VERBOSE: print("Encoding target language validation corpus",datetime.now())
     os.system(command)
     
 if GUIDED_ALIGNMENT:
@@ -194,7 +193,7 @@ if GUIDED_ALIGNMENT:
     if ALIGNER=="eflomal":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
-        print("EFLOMAL",MTUOC,"train.sp","train.sp",SL,TL,SPLIT_LIMIT,VERBOSE)
+        if VERBOSE: print("EFLOMAL",MTUOC,"train.sp","train.sp",SL,TL,SPLIT_LIMIT,VERBOSE)
         guided_alignment_eflomal(MTUOC,"train.sp","train.sp",SL,TL,SPLIT_LIMIT,VERBOSE)
 
 if GUIDED_ALIGNMENT_VALID:
@@ -212,8 +211,6 @@ if GUIDED_ALIGNMENT_VALID:
         from MTUOC_guided_alignment_fast_align import guided_alignment_fast_align
         guided_alignment_fast_align(MTUOC,"val.sp","val.sp",SL,TL,False,VERBOSE)
         
-            
-        
     if ALIGNER=="eflomal":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
@@ -225,8 +222,10 @@ if VERBOSE:
 #DELETE TEMPORAL FILES
 
 if DELETE_TEMP:
+    if VERBOSE: print("Deleting temporal files",datetime.now())
     os.remove("trainPreSL.temp")
     os.remove("trainPreTL.temp")
     os.remove("valPreSL.temp")
     os.remove("valPreTL.temp")
+
 

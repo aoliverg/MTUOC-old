@@ -36,8 +36,6 @@ SPLIT_LIMIT: 1000000
 GUIDED_ALIGNMENT_VALID: True
 ALIGNER_VALID: eflomal
 #one of eflomal, fast_align
-#BOTH_DIRECTIONS_VALID: True 
-#only for fast_align, eflomal aligns always the two directions at the same time
 DELETE_EXISTING_VALID: True
 
 DELETE_TEMP: True
