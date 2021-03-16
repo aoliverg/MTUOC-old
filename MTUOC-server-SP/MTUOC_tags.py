@@ -22,6 +22,17 @@ class TagRestorer():
     def __init__(self):
         pass
         
+    def lreplace(self, pattern, sub, string):
+        """
+        Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
+        """
+        return re.sub('^%s' % pattern, sub, string)
+
+    def rreplace(self, pattern, sub, string):
+        """
+        Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
+        """
+        return re.sub('%s$' % pattern, sub, string)
         
     def get_name(self, tag):
         name=tag.split(" ")[0].replace("<","").replace(">","").replace("/","")
@@ -116,9 +127,9 @@ class TagRestorer():
         except:
             endtag=None
         if starttag:
-            segment=lreplace(starttag,"",segment)
+            segment=self.lreplace(starttag,"",segment)
         if endtag:
-            segment=rreplace(endtag,"",segment)
+            segment=self.rreplace(endtag,"",segment)
         return(segment,starttag,endtag)
 
     def restore_tags(self,SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNOTAGSTOKSP, spechar="▁", bos="<s>", eos="</s>"):
