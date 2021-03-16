@@ -64,12 +64,11 @@ corpusTRAIN=config["corpusTRAIN"]
 corpusVAL=config["corpusVAL"]
 corpusEVAL=config["corpusEVAL"]
 
-if not SL_tokenizer.endswith(".py"): SL_tokenizer=SL_tokenizer+".py"
-SL_tokenizer=MTUOC+"/"+SL_tokenizer
+if SL_tokenizer.endswith(".py"): SL_tokenizer=SL_tokenizer.replace(".py","")
 
-spec = importlib.util.spec_from_file_location('', SL_tokenizer)
-tokenizer = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(tokenizer)
+command="from "+SL_tokenizer+" import Tokenizer as Tokenizer"
+exec(command)
+tokenizer=Tokenizer()
 
 print("STEP 1. Tokenizing SL SPE corpus")
 
