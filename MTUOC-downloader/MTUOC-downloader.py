@@ -20,8 +20,9 @@ if args.listEngines:
         lines=entrada.readlines()
         for line in lines:
             print(line.rstrip())
+        os.remove("enginelist.txt")
         
-else:
+elif args.engine:
     try:
         engine=args.engine
         url="http://lpg.uoc.edu/MTUOC/"+engine+".zip"
@@ -35,15 +36,15 @@ else:
 
         os.remove(file_name)
         try:
-            path="./"+engine+"/marian-server*"
+            path="./"+engine+"/marian*"
         except:
             pass
         try:
-            path="./"+engine+"/moses*"
+            path="./"+engine+"/moses"
         except:
             pass    
             
         print("Changing permissions to ",path)
         os.chmod(path, 111)
     except:
-        print("ERROR: Unable to download engine "+engine)
+        print("Some error occurred: check the integrity of the engine "+engine,sys.exc_info()[0])
