@@ -17,7 +17,7 @@ mkdir binarised-model
 
 #ORDENAMOS MODELO DE TRADUCCIÓN
 #BINARIZAMOS MODELO DE TRADUCCIÓN
-zcat ./working/train/model/phrase-table.gz | LC_ALL=C sort > ./working/train/model/phrase-table-sorted
+zcat ./working/train/model/phrase-table.pruned.gz | LC_ALL=C sort > ./working/train/model/phrase-table-sorted
 gzip ./working/train/model/phrase-table-sorted
 $MBIN/processPhraseTableMin -in ./working/train/model/phrase-table-sorted.gz -nscores 4 -out ./binarised-model/phrase-table-bin
 

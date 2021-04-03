@@ -17,6 +17,8 @@ export MTOOLS="/Moses/tools"
 export MCONTRIB="/Moses/contrib"
 export MSCRIPTS="/Moses/scripts"
 export MBIN="/Moses/bin/"
+export MSAM="/Moses/SALM"
+
 
 #EL DIRECTORIO ACTUAL
 CURRENTDIR="$PWD"
@@ -43,11 +45,26 @@ $MSCRIPTS/training/train-model.perl -root-dir train -mgiza -corpus ../$trainPref
 
 cd ..
 
+#SALM
+
+echo "INICIAMOS SALM"
+
+
+$MSAM/IndexSA.O64 $trainPrefix.$TL 
+
+$MSAM/IndexSA.O64 $trainPrefix.$SL 
+
+zcat ./working/train/model/phrase-table.gz | $MCONTRIB/sigtest-filter/filter-pt -e $trainPrefix.$TL  -f $trainPrefix.$SL -l a+e -n 30 > ./working/train/model/phrase-table.pruned
+
+gzip ./working/train/model/phrase-table.pruned
+
+sed -i -e 's/phrase-table.gz/phrase-table.pruned.gz/g' ./working/train/model/moses.ini
+
+
 echo "INICIAMOS OPTIMIZACIÓN"
 echo "MERT-MOSES"
 
 $MSCRIPTS/training/mert-moses.pl $valPrefix.$SL $valPrefix.$TL $MBIN/moses ./working/train/model/moses.ini --mertdir $MBIN &> mert.out 
-
 
 
 #CREAMOS EL DIRECTORIO DONDE ESTARÁ EL MODELO BINARIZADO
@@ -55,7 +72,7 @@ mkdir binarised-model
 
 #ORDENAMOS MODELO DE TRADUCCIÓN
 #BINARIZAMOS MODELO DE TRADUCCIÓN
-zcat ./working/train/model/phrase-table.gz | LC_ALL=C sort > ./working/train/model/phrase-table-sorted
+zcat ./working/train/model/phrase-table.pruned.gz | LC_ALL=C sort > ./working/train/model/phrase-table-sorted
 gzip ./working/train/model/phrase-table-sorted
 $MBIN/processPhraseTableMin -in ./working/train/model/phrase-table-sorted.gz -nscores 4 -out ./binarised-model/phrase-table-bin
 
