@@ -114,7 +114,7 @@ MIN_CHAR=config["MIN_CHAR"]
 MAX_CHAR=config["MAX_CHAR"]
 
 #TRAIN
-'''
+
 entrada=codecs.open(trainCorpus,"r",encoding="utf-8")
 sortidaSL=codecs.open("trainSL.temp","w",encoding="utf-8")
 sortidaTL=codecs.open("trainTL.temp","w",encoding="utf-8")
@@ -129,7 +129,7 @@ for linia in entrada:
 entrada.close()
 sortidaSL.close()
 sortidaTL.close()
-'''
+
 if TRAIN_SL_TRUECASER:
     SLTrainer=TC_Trainer(MTUOC, SL_TC_MODEL, "trainSL.temp", SL_DICT, SL_TOKENIZER)
     SLTrainer.train_truecaser()
