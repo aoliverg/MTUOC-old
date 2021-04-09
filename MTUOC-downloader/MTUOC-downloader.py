@@ -28,7 +28,6 @@ elif args.engine:
         url="http://lpg.uoc.edu/MTUOC/"+engine+".zip"
         file_name = engine+".zip"
 
-        print("Downloading ",url)
         with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
             with zipfile.ZipFile(file_name) as zf:
@@ -37,14 +36,19 @@ elif args.engine:
         os.remove(file_name)
         try:
             path="./"+engine+"/marian*"
+            os.chmod(path, 111)
         except:
             pass
+        else:
+            print("Successfully changed permissions of marian-server")
         try:
             path="./"+engine+"/moses"
+            os.chmod(path, 111)
         except:
-            pass    
-            
-        print("Changing permissions to ",path)
-        os.chmod(path, 111)
+            pass   
+        else:
+            print("Successfully changed permissions of moses")
+        
     except:
-        print("Some error occurred: check the integrity of the engine "+engine,sys.exc_info()[0])
+        print("Some error occurred: check the integrity of the engine: "+engine)
+        print("Please, report this error: ", sys.exc_info())
