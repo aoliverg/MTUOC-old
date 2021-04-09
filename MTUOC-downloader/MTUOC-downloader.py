@@ -1,6 +1,7 @@
 import zipfile, urllib.request, shutil
 import sys
 import os
+import os.path
 import argparse
 import codecs
 
@@ -34,20 +35,27 @@ elif args.engine:
                 zf.extractall()
 
         os.remove(file_name)
-        try:
-            path="./"+engine+"/marian*"
-            os.chmod(path, 111)
-        except:
-            pass
-        else:
-            print("Successfully changed permissions of marian-server")
-        try:
-            path="./"+engine+"/moses"
-            os.chmod(path, 111)
-        except:
-            pass   
-        else:
-            print("Successfully changed permissions of moses")
+        path="./"+engine+"/marian-server"
+        if os.path.isfile(path):
+            print("Changing permissions to marian-server.")
+            try:
+                
+                os.chmod(path, 111)
+            except:
+                print("Error changing permissions to marian-server. Change permissions manually:")
+                print("chmod +x marian-server")
+            else:
+                print("Successfully changed permissions of marian-server")
+        path="./"+engine+"/moses"
+        if os.path.isfile(path):
+            try:
+                path="./"+engine+"/moses"
+                os.chmod(path, 111)
+            except:
+                print("Error changing permissions to moses. Change permissions manually:")
+                print("chmod +x moses")   
+            else:
+                print("Successfully changed permissions of moses")
         
     except:
         print("Some error occurred: check the integrity of the engine: "+engine)
