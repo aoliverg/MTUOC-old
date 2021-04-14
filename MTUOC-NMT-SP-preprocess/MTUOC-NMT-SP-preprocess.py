@@ -198,7 +198,7 @@ if GUIDED_ALIGNMENT:
 
 if GUIDED_ALIGNMENT_VALID:
     if VERBOSE:
-        print("GUIDED ALIGNMENT TRAINING",datetime.now())
+        print("GUIDED ALIGNMENT VALID",datetime.now())
     if DELETE_EXISTING:
         FILE="val.sp."+SL+"."+SL+".align" 
         if os.path.exists(FILE):
@@ -206,12 +206,12 @@ if GUIDED_ALIGNMENT_VALID:
         FILE="val.sp."+TL+"."+TL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)            
-    if ALIGNER=="fast_align":
+    if ALIGNER_VALID=="fast_align":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_fast_align import guided_alignment_fast_align
         guided_alignment_fast_align(MTUOC,"val.sp","val.sp",SL,TL,False,VERBOSE)
         
-    if ALIGNER=="eflomal":
+    if ALIGNER_VALID=="eflomal":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
         guided_alignment_eflomal(MTUOC,"val.sp","val.sp",SL,TL,SPLIT_LIMIT,VERBOSE)

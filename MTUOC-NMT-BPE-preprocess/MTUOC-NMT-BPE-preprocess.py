@@ -257,12 +257,12 @@ if GUIDED_ALIGNMENT_VALID:
         FILE="val.bpe."+TL+"."+TL+".align" 
         if os.path.exists(FILE):
             os.remove(FILE)            
-    if ALIGNER=="fast_align":
+    if ALIGNER_VALID=="fast_align":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_fast_align import guided_alignment_fast_align
         guided_alignment_fast_align(MTUOC,"val.bpe","val.bpe",SL,TL,False,VERBOSE)
         
-    if ALIGNER=="eflomal":
+    if ALIGNER_VALID=="eflomal":
         sys.path.append(MTUOC)
         from MTUOC_guided_alignment_eflomal import guided_alignment_eflomal
         guided_alignment_eflomal(MTUOC,"val.bpe","val.bpe",SL,TL,SPLIT_LIMIT,VERBOSE)

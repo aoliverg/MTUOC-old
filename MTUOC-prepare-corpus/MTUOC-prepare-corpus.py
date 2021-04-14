@@ -121,8 +121,9 @@ sortidaTL=codecs.open("trainTL.temp","w",encoding="utf-8")
 
 for linia in entrada:
     camps=linia.split("\t")
-    sortidaSL.write(camps[0]+"\n")
-    sortidaTL.write(camps[1]+"\n")
+    if len(camps)==2:
+        sortidaSL.write(camps[0]+"\n")
+        sortidaTL.write(camps[1]+"\n")
 
 
 
@@ -133,10 +134,11 @@ sortidaTL.close()
 if TRAIN_SL_TRUECASER:
     SLTrainer=TC_Trainer(MTUOC, SL_TC_MODEL, "trainSL.temp", SL_DICT, SL_TOKENIZER)
     SLTrainer.train_truecaser()
-    
-if TRAIN_SL_TRUECASER:
+
+if TRAIN_TL_TRUECASER:
     TLTrainer=TC_Trainer(MTUOC, TL_TC_MODEL, "trainTL.temp", TL_DICT, TL_TOKENIZER)
-    TLTrainer.train_truecaser()
+    TLTrainer.train_truecaser()    
+
 
 truecaserSL=Truecaser()
 truecaserSL.set_MTUOCPath(MTUOC)
@@ -169,34 +171,37 @@ tokenizerTL=tokenizerTLmod.Tokenizer()
 for linia in entrada:
     toWrite=True
     linia=linia.rstrip()
-    (l1,l2)=linia.split("\t")
-    lensl=len(l1)
-    lentl=len(l2)
-    toksl=tokenizerSL.tokenize(l1)
-    toktl=tokenizerTL.tokenize(l2)
-    lentoksl=len(toksl.split(" "))
-    lentoktl=len(toktl.split(" "))
-    if lensl<MIN_CHAR: toWrite=False
-    if lentl<MIN_CHAR: toWrite=False
-    if lensl>MAX_CHAR: toWrite=False
-    if lentl>MAX_CHAR: toWrite=False
-    
-    if lentoksl<MIN_TOK: toWrite=False
-    if lentoktl<MIN_TOK: toWrite=False
-    if lentoksl>MAX_TOK: toWrite=False
-    if lentoktl>MAX_TOK: toWrite=False
-    
-    if toWrite:
-        if REPLACE_EMAILS:
-            l1=replace_EMAILs(l1,EMAIL_CODE)
-            l2=replace_EMAILs(l2,EMAIL_CODE)
-        if REPLACE_URLS:
-            l1=replace_URLs(l1)
-            l2=replace_URLs(l2)
-        l1t=truecaserSL.truecase(l1)
-        l2t=truecaserTL.truecase(l2)
-        cadena=l1t+"\t"+l2t
-        sortida.write(cadena+"\n")
+    camps=linia.split("\t")
+    if len(camps)==2:
+        l1=camps[0]
+        l2=camps[1]
+        lensl=len(l1)
+        lentl=len(l2)
+        toksl=tokenizerSL.tokenize(l1)
+        toktl=tokenizerTL.tokenize(l2)
+        lentoksl=len(toksl.split(" "))
+        lentoktl=len(toktl.split(" "))
+        if lensl<MIN_CHAR: toWrite=False
+        if lentl<MIN_CHAR: toWrite=False
+        if lensl>MAX_CHAR: toWrite=False
+        if lentl>MAX_CHAR: toWrite=False
+        
+        if lentoksl<MIN_TOK: toWrite=False
+        if lentoktl<MIN_TOK: toWrite=False
+        if lentoksl>MAX_TOK: toWrite=False
+        if lentoktl>MAX_TOK: toWrite=False
+        
+        if toWrite:
+            if REPLACE_EMAILS:
+                l1=replace_EMAILs(l1,EMAIL_CODE)
+                l2=replace_EMAILs(l2,EMAIL_CODE)
+            if REPLACE_URLS:
+                l1=replace_URLs(l1)
+                l2=replace_URLs(l2)
+            l1t=truecaserSL.truecase(l1)
+            l2t=truecaserTL.truecase(l2)
+            cadena=l1t+"\t"+l2t
+            sortida.write(cadena+"\n")
     
 entrada.close()
 sortida.close()
@@ -207,34 +212,37 @@ sortida=codecs.open(valPreCorpus,"w",encoding="utf-8")
 for linia in entrada:
     toWrite=True
     linia=linia.rstrip()
-    (l1,l2)=linia.split("\t")
-    lensl=len(l1)
-    lentl=len(l2)
-    toksl=tokenizerSL.tokenize(l1)
-    toktl=tokenizerTL.tokenize(l2)
-    lentoksl=len(toksl.split(" "))
-    lentoktl=len(toktl.split(" "))
-    if lensl<MIN_CHAR: toWrite=False
-    if lentl<MIN_CHAR: toWrite=False
-    if lensl>MAX_CHAR: toWrite=False
-    if lentl>MAX_CHAR: toWrite=False
-    
-    if lentoksl<MIN_TOK: toWrite=False
-    if lentoktl<MIN_TOK: toWrite=False
-    if lentoksl>MAX_TOK: toWrite=False
-    if lentoktl>MAX_TOK: toWrite=False
-    
-    if toWrite:
-        if REPLACE_EMAILS:
-            l1=replace_EMAILs(l1,EMAIL_CODE)
-            l2=replace_EMAILs(l2,EMAIL_CODE)
-        if REPLACE_URLS:
-            l1=replace_URLs(l1)
-            l2=replace_URLs(l2)
-        l1t=truecaserSL.truecase(l1)
-        l2t=truecaserTL.truecase(l2)
-        cadena=l1t+"\t"+l2t
-        sortida.write(cadena+"\n")
+    camps=linia.split("\t")
+    if len(camps)==2:
+        l1=camps[0]
+        l2=camps[1]
+        lensl=len(l1)
+        lentl=len(l2)
+        toksl=tokenizerSL.tokenize(l1)
+        toktl=tokenizerTL.tokenize(l2)
+        lentoksl=len(toksl.split(" "))
+        lentoktl=len(toktl.split(" "))
+        if lensl<MIN_CHAR: toWrite=False
+        if lentl<MIN_CHAR: toWrite=False
+        if lensl>MAX_CHAR: toWrite=False
+        if lentl>MAX_CHAR: toWrite=False
+        
+        if lentoksl<MIN_TOK: toWrite=False
+        if lentoktl<MIN_TOK: toWrite=False
+        if lentoksl>MAX_TOK: toWrite=False
+        if lentoktl>MAX_TOK: toWrite=False
+        
+        if toWrite:
+            if REPLACE_EMAILS:
+                l1=replace_EMAILs(l1,EMAIL_CODE)
+                l2=replace_EMAILs(l2,EMAIL_CODE)
+            if REPLACE_URLS:
+                l1=replace_URLs(l1)
+                l2=replace_URLs(l2)
+            l1t=truecaserSL.truecase(l1)
+            l2t=truecaserTL.truecase(l2)
+            cadena=l1t+"\t"+l2t
+            sortida.write(cadena+"\n")
     
 entrada.close()
 sortida.close()

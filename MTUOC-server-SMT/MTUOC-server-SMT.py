@@ -30,7 +30,6 @@ import codecs
 import xmlrpc.client
 import json
 import pickle
-import sentencepiece as spm
 
 import io
 import lxml
@@ -507,6 +506,8 @@ def translate_segment(segment):
                 
     except:
         print("ERROR:",sys.exc_info())
+    if add_trailing_space:
+        selectedtranslation=selectedtranslation+" "
     return(selectedtranslation)
 
 def translate_segment_Marian(segmentPre):
@@ -622,6 +623,8 @@ MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
 MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
 MTUOCServer_EMAILs=config["MTUOCServer"]["EMAILs"]
 MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
+add_trailing_space=config["MTUOCServer"]["add_trailing_space"]
+
 
 sllang=config["Preprocess"]["sl_lang"]
 tllang=config["Preprocess"]["tl_lang"]
@@ -642,25 +645,8 @@ if not MTUOCServer_MTengine=="ModernMT":
     #loading truecasing model
     if not tcmodel==None:
         ltcmodel=load_tc_model(tcmodel)
-    '''
-    #vocabulary restriction
-    if not spvocabulary_threshold==None:
-        vocab=[]
-        entrada=codecs.open(spvocab,"r",encoding="utf-8")
-        for linia in entrada:
-            linia=linia.strip()
-            camps=linia.split("\t")
-            if float(camps[1])>=spvocabulary_threshold:
-                vocab.append(camps[0])
-        vocab=list(vocab)
-    
-    sp= spm.SentencePieceProcessor(model_file=spmodel, out_type=str, add_bos=bos_annotate, add_eos=eos_annotate)
-    sp2= spm.SentencePieceProcessor(model_file=spmodel, out_type=str)
-    
-    if vocab and not spvocabulary_threshold==None:
-        sp.set_vocabulary(vocab)
-        sp2.set_vocabulary(vocab)
-    '''
+
+
 if MTUOCServer_MTengine=="Marian":
     from websocket import create_connection
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

@@ -32,7 +32,7 @@ class TagRestorer():
         """
         Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
         """
-        return re.sub('%s$' % pattern, sub, string)
+        return re.sub('%s$' % pattern, sub, string)    
         
     def get_name(self, tag):
         name=tag.split(" ")[0].replace("<","").replace(">","").replace("/","")

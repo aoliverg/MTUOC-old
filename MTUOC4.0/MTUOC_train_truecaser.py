@@ -26,10 +26,13 @@ class TC_Trainer():
         if tokenizer==None:
             self.tokenizer=None
         else:
-            sys.path.append(MTUOCPath)
-            if tokenizer.endswith(".py"):tokenizer=tokenizer.replace(".py","")
-            self.module = importlib.import_module(tokenizer)
-            self.tokenizer=self.module.Tokenizer()
+            tokenizer=MTUOCPath+"/"+tokenizer
+
+            if not tokenizer.endswith(".py"): tokenizer=tokenizer+".py"
+            spec = importlib.util.spec_from_file_location('', tokenizer)
+            tokenizermod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(tokenizermod)
+            self.tokenizer=tokenizermod.Tokenizer()
             
         self.corpus=corpus
         self.dictionary=dictionary

@@ -24,14 +24,17 @@ class Truecaser():
     def __init__(self, MTUOCPath=".", tokenizer=None, tc_model=None):
         
         self.initchars=["¡","¿","-","*","+","'",'"',"«","»","—","‘","’","“","”","„",]
-        
+        self.MTUOCPath=MTUOCPath
         if tokenizer==None:
             self.tokenizer=None
         else:
-            sys.path.append(MTUOCPath)
-            if tokenizer.endswith(".py"):tokenizer=tokenizer.replace(".py","")
-            self.module = importlib.import_module(tokenizer)
-            self.tokenizer=self.module.Tokenizer()
+            tokenizer=self.MTUOCPath+"/"+tokenizer
+            if not tokenizer.endswith(".py"): tokenizer=tokenizer+".py"
+            spec = importlib.util.spec_from_file_location('', tokenizer)
+            tokenizermod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(tokenizermod)
+            self.tokenizer=tokenizermod.Tokenizer()
+            
         if tc_model:
             self.tc_model = pickle.load(open(tc_model, "rb" ) )
         else:
@@ -40,12 +43,16 @@ class Truecaser():
         self.tc_model = pickle.load(open(tc_model, "rb" ) )
         
     def set_tokenizer(self, tokenizer):
-        if tokenizer.endswith(".py"):tokenizer=tokenizer.replace(".py","")
-        self.module = importlib.import_module(tokenizer)
-        self.tokenizer=self.module.Tokenizer()
+        tokenizer=self.MTUOCPath+"/"+tokenizer
+        if not tokenizer.endswith(".py"): tokenizer=tokenizer+".py"
+        spec = importlib.util.spec_from_file_location('', tokenizer)
+        tokenizermod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tokenizermod)
+        self.tokenizer=tokenizermod.Tokenizer()
     
     def set_MTUOCPath(self, path):
         sys.path.append(path)
+        self.MTUOCPath=path
         
     def isinitsymbol(self, token):
         if len(token)==1 and token in self.initchars:
