@@ -1,0 +1,15 @@
+MTUOC: "/MTUOC4.0"
+VERBOSE: True
+DELETE_EXISTING: True
+SPLIT_LIMIT: 1000000
+ALIGNER: "eflomal"
+
+SL: es
+TL: ar
+
+trainPreCorpus: train.smt
+valPreCorpus: val.smt
+
+GUIDED_ALIGNMENT_VALID: True
+ALIGNER_VALID: eflomal
+DELETE_EXISTING_VALID: True
