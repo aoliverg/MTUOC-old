@@ -7,7 +7,7 @@ MTUOC is a project from the Universitat Oberta de Catalunya (UOC) wit the goal o
    * Truecaser (both a program to train truecaser models and the truecaser itself).
    * Basic replacement and restoring modules for URLs and Emails.
    * Basic scripts for replacing and restoring numerical expressions.
-* Python scripts for converting TMX files to tab delimited files.
+* Python scripts for converting TMX files to tab-delimited files.
 * Corpus preparation scripts.
 * Scripts for preprocessing parallel corpora to be used in training neural of statistical MT systems.
 * Configuration scripts for training using several MT toolkits (Marian, OpenNMT, Moses and other to be defined).
