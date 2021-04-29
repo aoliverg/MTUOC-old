@@ -10,7 +10,7 @@ corpusVAL: val-eng-spa.txt
 corpusEVAL: eval-eng-spa.txt
 
 #sizes
-GEN_selected_segments: 10000
+GEN_selected_segments: 5000000
 lval: 1000
 leval: 1000
 
