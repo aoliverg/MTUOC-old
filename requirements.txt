@@ -3,7 +3,7 @@ requests
 sentencepiece
 subword_nmt
 nltk
-lxml==4.5.0
+lxml
 Flask
 PyYAML
 SimpleWebSocketServer
