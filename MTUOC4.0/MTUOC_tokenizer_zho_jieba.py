@@ -34,7 +34,13 @@ class Tokenizer():
         for xifra in xifres:
             xifrastr=str(xifra)
             xifrasplit=xifra.split()
-            xifra2="￭ ".join(xifra)
+            xifra2=[]
+            contpos=0
+            for x in xifrastr:
+                if not contpos==0: xifra2.append(" ￭")
+                xifra2.append(x)
+                contpos+=1
+            xifra2="".join(xifra2)
             segment=segment.replace(xifra,xifra2)
         return(segment)
 

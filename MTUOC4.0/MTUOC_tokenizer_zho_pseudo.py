@@ -40,14 +40,20 @@ def spliteKeyWord(str):
        matches = re.findall(regex, str, re.UNICODE)
        return matches
 
-def split_numbers(segment):
-    xifres = re.findall(re_num,segment)
-    for xifra in xifres:
-        xifrastr=str(xifra)
-        xifrasplit=xifra.split()
-        xifra2="￭ ".join(xifra)
-        segment=segment.replace(xifra,xifra2)
-    return(segment)
+def split_numbers(self,segment):
+        xifres = re.findall(self.re_num,segment)
+        for xifra in xifres:
+            xifrastr=str(xifra)
+            xifrasplit=xifra.split()
+            xifra2=[]
+            contpos=0
+            for x in xifrastr:
+                if not contpos==0: xifra2.append(" ￭")
+                xifra2.append(x)
+                contpos+=1
+            xifra2="".join(xifra2)
+            segment=segment.replace(xifra,xifra2)
+        return(segment)
 
 
 
@@ -149,7 +155,7 @@ class Tokenizer():
     def tokenize_jn(self, segment):
         seg_list=spliteKeyWord(segment)
         tokenized = " ￭".join(list(seg_list))
-        tokenized=split_numbers(tokenized)
+        tokenized=self.split_numbers(tokenized)
         return(tokenized)
 
     def detokenize_jn(self, segment):
@@ -174,7 +180,7 @@ class Tokenizer():
     def tokenize_sn(self, segment):
         seg_list=spliteKeyWord(segment)
         tokenized = " ￭".join(list(seg_list))
-        tokenized=split_numbers(tokenized)
+        tokenized=self.split_numbers(tokenized)
         tokenized=tokenized.replace("￭ ","￭")
         tokenized=tokenized.replace(" ￭","￭")
         tokenized=tokenized.replace(" "," ▁")
@@ -210,32 +216,33 @@ if __name__ == "__main__":
         action=sys.argv[1]
     else:
         action="tokenize"
+    tokenizer=Tokenizer()
     for line in sys.stdin:
         line=line.strip()
         #normalization of apostrophe
         line=line.replace("’","'")
         line=html.unescape(line)
         if action=="tokenize":
-            outsegment=tokenize(line)
+            outsegment=tokenizer.tokenize(line)
         elif action=="detokenize":
-            outsegment=detokenize(line)
+            outsegment=tokenizer.detokenize(line)
         
         elif action=="tokenize_s":
-            outsegment=tokenize_s(line)
+            outsegment=tokenizer.tokenize_s(line)
         elif action=="detokenize_s":
-            outsegment=detokenize_s(line)
+            outsegment=tokenizer.detokenize_s(line)
         elif action=="tokenize_sn":
-            outsegment=tokenize_sn(line)
+            outsegment=tokenizer.tokenize_sn(line)
         elif action=="detokenize_sn":
-            outsegment=detokenize_sn(line)
+            outsegment=tokenizer.detokenize_sn(line)
         
         elif action=="tokenize_j":
-            outsegment=tokenize_j(line)
+            outsegment=tokenizer.tokenize_j(line)
         elif action=="detokenize_j":
-            outsegment=detokenize_j(line)
+            outsegment=tokenizer.detokenize_j(line)
         elif action=="tokenize_jn":
-            outsegment=tokenize_jn(line)
+            outsegment=tokenizer.tokenize_jn(line)
         elif action=="detokenize_jn":
-            outsegment=detokenize_jn(line)
+            outsegment=tokenizer.detokenize_jn(line)
         
         print(outsegment)
