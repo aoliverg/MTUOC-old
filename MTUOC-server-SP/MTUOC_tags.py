@@ -1,6 +1,6 @@
 #    MTUOC_tags
 #    Copyright (C) 2021  Antoni Oliver
-#
+#    v. 16/05/2021
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -17,22 +17,45 @@
 import re
 import io
 import lxml.etree as ET
+import itertools
+import sys
+
+def lreplace(pattern, sub, string):
+    """
+    Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
+    """
+    return re.sub('^%s' % pattern, sub, string)
+
+def rreplace(pattern, sub, string):
+    """
+    Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
+    """
+    return re.sub('%s$' % pattern, sub, string)
 
 class TagRestorer():
     def __init__(self):
         pass
         
-    def lreplace(self, pattern, sub, string):
-        """
-        Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
-        """
-        return re.sub('^%s' % pattern, sub, string)
+    #get_mappings and convert adapted from https://github.com/lilt/alignment-scripts/blob/master/scripts/sentencepiece_to_word_alignments.py
+            
+    def get_mapping(self,l):
+        subwords = l.strip().split()  
+        return(list(itertools.accumulate([int('▁' in x) for x in subwords])))
 
-    def rreplace(self, pattern, sub, string):
-        """
-        Replaces 'pattern' in 'string' with 'sub' if 'pattern' ends 'string'.
-        """
-        return re.sub('%s$' % pattern, sub, string)    
+    def convert(self,srcSTR,tgtSTR,aliSTR):
+        src_map=self.get_mapping(srcSTR)
+        tgt_map=self.get_mapping(tgtSTR)
+        subword_alignments = {(int(a), int(b)) for a, b in (x.split("-") for x in aliSTR.split())}
+        word_alignments=[]
+        for a,b in subword_alignments:
+            try:
+                word_alignments.append(str(src_map[a])+"-"+str(tgt_map[b]))
+            except:
+                pass
+        word_alignments=" ".join(word_alignments)
+        ssW=srcSTR.replace(" ","").replace("▁"," ")
+        tsW=tgtSTR.replace(" ","").replace("▁"," ")
+        return(ssW,tsW,word_alignments)
         
     def get_name(self, tag):
         name=tag.split(" ")[0].replace("<","").replace(">","").replace("/","")
@@ -83,7 +106,7 @@ class TagRestorer():
             equil[trep]=t
             conttag+=1    
         return(segment,equil)
-
+            
     def replace_tags(self, segment):
         equil={}
         if self.has_tags(segment):
@@ -93,7 +116,10 @@ class TagRestorer():
             tags.extend(tagsB)
             conttag=0
             for tag in tags:
-                tagrep="<tag"+str(conttag)+">"
+                if tag.find("</")>-1:
+                    tagrep="</tag"+str(conttag)+">"
+                else:
+                    tagrep="<tag"+str(conttag)+">"
                 segment=segment.replace(tag,tagrep,1)
                 equil[tagrep]=tag
                 if tag in tagsA:
@@ -127,150 +153,125 @@ class TagRestorer():
         except:
             endtag=None
         if starttag:
-            segment=self.lreplace(starttag,"",segment)
+            segment=lreplace(starttag,"",segment)
         if endtag:
-            segment=self.rreplace(endtag,"",segment)
+            segment=rreplace(endtag,"",segment)
         return(segment,starttag,endtag)
+    
+    def isSTag(self,tok):
+        if re.match("<tag[0-9]+>", tok):return(True)
+        else: return(False)
+    def isSClosingTag(self,tok):
+        if re.match("<\/tag[0-9]+>", tok):return(True)
+        else: return(False)
+    def toClosingTag(self,tag):
+        closingTag=tag.replace("<","</")
+        return(closingTag)    
+    
+    def upperFirst(self,segment):
+        #UPPERCASES the first letter after tags and symbols
+        symbols=["(","[","¿","¡","'",'"',"«","‹","„","“","‟","❝","❮","⹂","〝","〟","＂","‚","‚","‘","❛","-","—","{"]
+        inTag=False
+        pos=0
+        segmentL=list(segment)
+        for car in segmentL:
+            if car=="<":
+                inTag=True
+            elif car==">":
+                inTag=False
+            elif not car in symbols and not inTag and car.isalpha():
+                segmentL[pos]=segmentL[pos].upper()
+                break
+            pos+=1
+        segment="".join(segmentL)
+        return(segment)
+        
+    def isFirstUpperCase(self,segment):
+        #UPPERCASES the first letter after tags and symbols
+        symbols=["(","[","¿","¡","'",'"',"«","‹","„","“","‟","❝","❮","⹂","〝","〟","＂","‚","‚","‘","❛","-","—","{"]
+        isUC=False
+        inTag=False
+        pos=0
+        segmentL=list(segment)
+        for car in segmentL:
+            if car=="<":
+                inTag=True
+            elif car==">":
+                inTag=False
+            elif not car in symbols and not inTag and car.isupper():
+                isUC=True
+                break
+            pos+=1
+        return(isUC)
 
-    def restore_tags(self,SOURCENOTAGSTOKSP, SOURCETAGSTOKSP, SELECTEDALIGNMENT, TARGETNOTAGSTOKSP, spechar="▁", bos="<s>", eos="</s>"):
-        relations={}
-        for t in SELECTEDALIGNMENT.split(" "):
-            camps=t.split("-")
-            if not int(camps[0]) in relations:
-                relations[int(camps[0])]=[]
-            relations[int(camps[0])].append(int(camps[1]))
-        f = io.BytesIO(SOURCETAGSTOKSP.encode('utf-8'))
-        events = ("start", "end")
-        context = ET.iterparse(f, events=events,recover=True)
-        cont_g=-1
-        tags=[]
-        tagpairs=[]
-        LISTSOURCETAGSTOKSP=self.splitTags(SOURCETAGSTOKSP)
-        LISTSOURCETAGSTOK=self.removeSpeChar(LISTSOURCETAGSTOKSP,spechar)
-        LISTSOURCENOTAGSTOKSP=self.splitTags(SOURCENOTAGSTOKSP)
-        LISTTARGETNOTAGSTOKSP=self.splitTags(TARGETNOTAGSTOKSP)
-        TEMPLIST=LISTSOURCETAGSTOKSP
-        charbefore={}
-        charafter={}
-        for event, elem in context:
-            if not elem.tag=="s":
-                tag=elem.tag
-                attr=elem.items()
-                if event=="start":
-                    if len(attr)==0:
-                        xmltag="<"+tag+">"
-                        if SOURCETAGSTOKSP.find(xmltag)>-1: tags.append(xmltag)
-                    else:
-                        lat=[]
-                        for at in attr:
-                            cadena=at[0]+"='"+str(at[1])+"'"
-                            lat.append(cadena)
-                        cat=" ".join(lat)
-                        xmltag1="<"+tag+" "+cat+">"
-                        if SOURCETAGSTOKSP.find(xmltag1)>-1: 
-                            tags.append(xmltag1)
-                            xmltag=xmltag1
-                            
-                        lat=[]
-                        for at in attr:
-                            cadena=at[0]+'="'+str(at[1])+'"'
-                            lat.append(cadena)
-                        cat=" ".join(lat)
-                        xmltag2="<"+tag+" "+cat+">"
-                        if SOURCETAGSTOKSP.find(xmltag2)>-1: 
-                            tags.append(xmltag2)
-                            xmltag=xmltag2
-                            
-                    closingtag="</"+tag+">"
-                    if SOURCETAGSTOKSP.find(closingtag)>-1: 
-                        tripleta=(xmltag,closingtag,elem.text)
-                        tagpairs.append(tripleta)
-                        
-                elif event=="end":
-                        xmltag="</"+tag+">"
-                        if SOURCETAGSTOKSP.find(xmltag)>-1: 
-                            tags.append(xmltag)
-                            
-                        xmltag="<"+tag+"/>"
-                        if SOURCETAGSTOKSP.find(xmltag)>-1: 
-                            tags.append(xmltag)
+    def restore_tags(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK, spechar="▁", bos="<s>", eos="</s>"):
+        if not bos=="": bos=bos+" "
+        if not eos=="": eos=" "+eos
+        SOURCETAGSTOK=bos+SOURCETAGSTOK+eos
+        TARGETTAGLIST=TARGETNOTAGSTOK.split(" ")
+        ali={}
+        for a in SELECTEDALIGNMENT.split():
+            (a1,a2)=a.split("-")
+            a1=int(a1)
+            a2=int(a2)
+            ali[a1]=a2
+        position=0
+        tagpos={}
+        posacu=0
+        SOURCETAGSTOKLIST=SOURCETAGSTOK.split()
+        SOURCENOTAGSTOKLIST=SOURCENOTAGSTOK.split()
+        position=0
+        
+        for i in range(0, len(SOURCETAGSTOKLIST)+1):
+            try:
+                stok=SOURCETAGSTOKLIST[i]
+                if self.isSTag(stok) or self.isSClosingTag(stok):
                     
-        preTags=[]
-        postTags=[]
-        for xmltag in tags:
-            if SOURCETAGSTOKSP.find(xmltag)>-1: 
-                chbf=SOURCETAGSTOKSP[SOURCETAGSTOKSP.index(xmltag)-1]
-                charbefore[xmltag]=chbf
-                chaf=SOURCETAGSTOKSP[SOURCETAGSTOKSP.index(xmltag)+len(xmltag)]
-                charafter[xmltag]=chaf
-        
-        tagsCHAR={}
-        
-        for tag in tags:
-            tagC=tag
-            if tag in charbefore:
-                cb=charbefore[tag].strip()
-                tagC=cb+tag
-                
-            if tag in charafter:
-                ca=charafter[tag].strip()
-                tagC=tagC+ca
-            tagsCHAR[tag]=tagC
-        
-        for i in range(0,len(LISTTARGETNOTAGSTOKSP)+1):
-            preTags.insert(i,None)
-            postTags.insert(i,None)
-        
-        for tripleta in tagpairs:
-            #source positions
-            sourcepositions=[]
-            for ttrip in tripleta[2].strip().split(" "):
-                try:
-                    postemp=LISTSOURCENOTAGSTOKSP.index(ttrip.strip())
-                    sourcepositions.append(postemp)
-                except:
-                    pass
-            try:
-                tags.remove(tripleta[0])
-                TEMPLIST.remove(tripleta[0])
-                        
+                    if self.isSTag(stok):
+                        tagpos[stok]=position
+                    elif self.isSClosingTag(stok):
+                        tagpos[stok]=position-1
+                            
+                    
+                else:
+                    position+=1
             except:
                 pass
+        posacu=0
+        alreadydone=[]
+        for tag in tagpos:
             try:
-                tags.remove(tripleta[1])
-                TEMPLIST.remove(tripleta[1])
+                if not tag in alreadydone:
+                    if self.isSTag(tag):
+                        closingTag=self.toClosingTag(tag)
+                        if closingTag in tagpos:
+                            posOpening=tagpos[tag]
+                            posClosing=tagpos[closingTag]
+                            posmax=0
+                            posmin=1000000
+                            for i in range(posOpening,posClosing+1):
+                                if ali[i]>posmax:posmax=ali[i]
+                                if ali[i]<posmin:posmin=ali[i]
+                            newtok=tag+" "+TARGETTAGLIST[posmin]
+                            TARGETTAGLIST[posmin]=newtok
+                            newtok=TARGETTAGLIST[posmax]+" "+closingTag
+                            TARGETTAGLIST[posmax]=newtok
+                            alreadydone.append(tag)
+                            alreadydone.append(closingTag)
+                    if not tag in alreadydone:        
+                        pos=tagpos[tag]
+                        if self.isSTag(tag):
+                            newtok=tag+" "+TARGETTAGLIST[ali[pos]]
+                            TARGETTAGLIST[ali[pos]]=newtok
+                        elif self.isSClosingTag(tag):
+                            newtok=TARGETTAGLIST[ali[pos]]+" "+tag
+                            TARGETTAGLIST[ali[pos]]=newtok
+                        posacu+=1
             except:
                 pass
-            #target positions
-            targetpositions=[]
-            for position in sourcepositions:
-                if position in relations: targetpositions.extend(relations[position])
-                
-            
-            preTags[min(targetpositions)]=tagsCHAR[tripleta[0]]
-            
-            postTags[max(targetpositions)]=tagsCHAR[tripleta[1]]
-
-        #isolated tags
-        for tag in tags:
-            try:
-                preTags[relations[TEMPLIST.index(tag)][0]]=tag
-                TEMPLIST.remove(tag)
-            except:
-                pass
-        
-        LISTTARGETTAGSTOKSP=[]
-        for i in range(0,len(LISTTARGETNOTAGSTOKSP)):
-            try:
-                if preTags[i]:
-                    LISTTARGETTAGSTOKSP.append(preTags[i])
-                LISTTARGETTAGSTOKSP.append(LISTTARGETNOTAGSTOKSP[i])
-                if postTags[i]:
-                    LISTTARGETTAGSTOKSP.append(postTags[i])
-            except:
-                pass
-        translationTagsSP=" ".join(LISTTARGETTAGSTOKSP)
-        return(translationTagsSP)
+        targettags=" ".join(TARGETTAGLIST)
+        targettags=targettags.replace(" .",".").replace(" ;",";").replace(" ,",",").replace(" :",":")
+        return(targettags)
         
     def splitTags(self, segment):
         tags=re.findall('(<[^>]+>)', segment)
@@ -338,8 +339,10 @@ class TagRestorer():
                     
                 except:
                     pass
-                    
-        sltokens=sltokenizer.tokenize(segment)
+        if sltokenizer:            
+            sltokens=sltokenizer.tokenize(segment)
+        else:
+            sltokens=segment
         resultat=selectedtranslation
         for sltok in sltokens.split(" "):
             if sltok==sltok.upper() and not sltok==sltok.lower():
