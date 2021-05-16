@@ -1,7 +1,7 @@
 #    MTUOC-server-SP v 4  
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2021  Antoni Oliver
-#
+#    v. 16/05/2021
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -128,7 +128,9 @@ def to_MT_SP(segment,tokenizer,truecaser,spmodel, vocab, bos="<s>", eos='</s>'):
     else:
         output=[]
         if not bos==None: output.append("<s>")
-        segmenttrue=tokenizerSL.tokenize(segmenttrue)
+        if tokenizer:
+            segmenttrue=tokenizer.tokenize(segmenttrue)
+           
         for t in tagrestorer.splitTags(segmenttrue):
             if not tagrestorer.is_tag(t):
                 sptok=" ".join(sp2.encode(t))
@@ -164,10 +166,16 @@ def from_MT_SP(sourcesegment,segment, tokenizer, joiner="▁",bos="<s>", eos="</
             ssfch=char 
             break
     if ssfch==ssfch.upper():
-        segmenttrue=truecaser.detruecase(segment,tokenizer)
+        if truecaser:
+            segmenttrue=truecaser.detruecase(segment,tokenizer)
+        else:
+            segmenttrue=segment
     else:
         segmenttrue=segment
-    segmentdetok=tokenizer.detokenize_j(segmenttrue)
+    if tokenizer:
+        segmentdetok=tokenizer.detokenize_j(segmenttrue)
+    else:
+        segmentdetok=segmenttrue
     tags=re.findall(r'<[^>]+>',segmentdetok)
     for tag in tags:
         if tag.find("▁")>-1:
@@ -185,7 +193,7 @@ def translate(segment):
 
 def translate_segment(segment):
     try:
-        printLOG(1,"Source segment:",segment)    
+        printLOG(1,"Source segment:",segment)
         if unescape_html:
             segment=html.unescape(segment)
             printLOG(3,"Unescaped segment:",segment)
@@ -196,7 +204,6 @@ def translate_segment(segment):
         ###Pretractament dels tags
         (segmentTAGS,equilG)=tagrestorer.group_tags(segment)
         (segmentTAGS,equil)=tagrestorer.replace_tags(segmentTAGS)
-        
         tagInici=""
         tagFinal=""
         (segmentTAGS,tagInici,tagFinal)=tagrestorer.remove_start_end_tag(segmentTAGS)
@@ -209,26 +216,29 @@ def translate_segment(segment):
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
         segmentPRENOTAGS=to_MT_SP(segmentNOTAGS,tokenizerSL,truecaser,spmodel,spvocab)
         printLOG(2,"Segment Pre. No Tags:",segmentPRENOTAGS)
-        segmentPRETAGS=to_MT_SP(segmentTAGS,tokenizerSL,truecaser,spmodel,spvocab)
-        if not segmentPRETAGS==segmentPRENOTAGS: printLOG(3,"Segment Pre. Tags:",segmentPRETAGS)
         hastags=tagrestorer.has_tags(segment)
         if MTUOCServer_MTengine=="Marian":
             (selectedtranslationPre, selectedalignment)=translate_segment_Marian(segmentPRENOTAGS)
         elif MTUOCServer_MTengine=="OpenNMT":
-            print("TRANSLATING WITH OPENNMT")
             (selectedtranslationPre, selectedalignment)=translate_segment_OpenNMT(segmentPRENOTAGS)
-            print("TRANSLATION",selectedtranslationPre)
         ###TO DO IMPLEMENT OTHER MT SYSTEMS: OpenNMT and ModernMT        
         
-        #restoring tags
+        ###New implementation of tag restoration afted deprocessing the translation
+        
+        (segmentWords,selectedtranslationWords,wordali)=tagrestorer.convert(segmentPRENOTAGS,selectedtranslationPre,selectedalignment)
+        segmentWordsTok=tokenizerSL.tokenize(segmentWords)
+        segmentTAGSTok=tokenizerSL.tokenize(segmentTAGS)
+        selectedtranslationWordsTok=tokenizerTL.tokenize(selectedtranslationWords)
         if MTUOCServer_restore_tags and hastags:
-            selectedtranslationTags=tagrestorer.restore_tags(segmentPRENOTAGS, segmentPRETAGS, selectedalignment, selectedtranslationPre, spechar="▁")
-            printLOG(2,"Translation Restored Tags:",selectedtranslationTags)
+            selectedtranslationTags=tagrestorer.restore_tags(segmentWordsTok, segmentTAGSTok, wordali, selectedtranslationWordsTok, spechar="▁")
         else:
-            selectedtranslationTags=selectedtranslationPre
+            selectedtranslationTags=selectedtranslationWords
+        if selectedtranslationTags.startswith("<s> "):selectedtranslationTags=selectedtranslationTags.replace("<s> ","")
+        if selectedtranslationTags.endswith(" </s>"):selectedtranslationTags=selectedtranslationTags.replace(" </s>","")
+        
         
         #Leading and trailing tags
-        selectedtranslationTags=from_MT_SP(segment,selectedtranslationTags,tokenizerSL)
+        #selectedtranslationTags=from_MT_SP(segment,selectedtranslationTags,tokenizerSL)
         if tagInici:
             selectedtranslationTags=tagInici+selectedtranslationTags
         if tagFinal:
@@ -242,17 +252,34 @@ def translate_segment(segment):
         #restoring/removing spaces before and after tags
         if MTUOCServer_restore_tags and hastags:
             selectedtranslationTags=tagrestorer.repairSpacesTags(segment,selectedtranslationTags)
+        ####TAG VERIFICATION
+        tagsSource=tagrestorer.get_tags(segment)
+        tagsTarget=tagrestorer.get_tags(selectedtranslationTags)
+        if strictTagRestoration and not set(tagsSource)==set(tagsTarget):
+            if selectedtranslationWords.startswith("<s> "):selectedtranslationWords=selectedtranslationWords.replace("<s> ","")
+            if selectedtranslationWords.endswith(" </s>"):selectedtranslationWords=selectedtranslationWords.replace(" </s>","")
+            selectedtranslationTags=selectedtranslationWords
         #restoring leading and trailing spaces
         lSP=leading_spaces*" "
         tSP=trailing_spaces*" "
         selectedtranslation=lSP+selectedtranslationTags+tSP
         #restoring case
         if MTUOCServer_restore_case:
-            if segment==segment.upper():
+            if not sllang in ["zh","ar"] and segment.isupper():
                 selectedtranslation=selectedtranslation.upper()
-            elif not selectedalignment=="":
+            if not selectedalignment=="":
                 selectedtranslation=tagrestorer.restoreCase(segment, segmentPRENOTAGS, selectedalignment, selectedtranslationPre, selectedtranslation,tokenizerSL,tokenizerTL)
+            if sllang in ["zh","ar"]:
+                selectedtranslation=tagrestorer.upperFirst(selectedtranslation)
+            elif segmentNOTAGS[0].isupper():
+                selectedtranslation=tagrestorer.upperFirst(selectedtranslation)
             printLOG(2,"Translation Restored Case:",selectedtranslation)
+            
+            
+            
+        if tagrestorer.isFirstUpperCase(segment):
+            selectedtranslation=tagrestorer.upperFirst(selectedtranslation)
+        
             
                 
         if MTUOCServer_EMAILs:
@@ -262,7 +289,7 @@ def translate_segment(segment):
         
                 
     except:
-        print("ERROR:",sys.exc_info())
+        printLOG(1,"ERROR:",sys.exc_info())
     if add_trailing_space:
         selectedtranslation=selectedtranslation+" "
     printLOG(1,"Translation:",selectedtranslation) 
@@ -345,6 +372,7 @@ if log_file:
     sortidalog=codecs.open(log_file,"a",encoding="utf-8")
 MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
 MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
+strictTagRestoration=config["MTUOCServer"]["strictTagRestoration"]
 MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
 MTUOCServer_EMAILs=config["MTUOCServer"]["EMAILs"]
 add_trailing_space=config["MTUOCServer"]["add_trailing_space"]
@@ -362,7 +390,9 @@ tcmodel=config["Preprocess"]["tcmodel"]
 bos_annotate=config["Preprocess"]["bos_annotate"]
 eos_annotate=config["Preprocess"]["eos_annotate"]
 sp_joiner=config["Preprocess"]["sp_joiner"]
-
+if MTUOCtokenizerSL=="None": MTUOCtokenizerSL=None
+if MTUOCtokenizerTL=="None": MTUOCtokenizerTL=None
+if tcmodel=="None": tcmodel=None
 if tcmodel:
     from MTUOC_truecaser import Truecaser
     truecaser=Truecaser(tokenizer=MTUOCtokenizerSL,tc_model=tcmodel)
@@ -370,20 +400,25 @@ else:
     truecaser=None
 
 if not MTUOCServer_MTengine=="ModernMT":
-    if not MTUOCtokenizerSL.endswith(".py"): MTUOCtokenizerSL=MTUOCtokenizerSL+".py"
 
-    spec = importlib.util.spec_from_file_location('', MTUOCtokenizerSL)
-    tokenizerSLmod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tokenizerSLmod)
-    tokenizerSL=tokenizerSLmod.Tokenizer()
+    if MTUOCtokenizerSL:
+        if not MTUOCtokenizerSL.endswith(".py"): MTUOCtokenizerSL=MTUOCtokenizerSL+".py"
+        spec = importlib.util.spec_from_file_location('', MTUOCtokenizerSL)
+        tokenizerSLmod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tokenizerSLmod)
+        tokenizerSL=tokenizerSLmod.Tokenizer()
+    else:
+        tokenizerSL=None
     
-    if not MTUOCtokenizerTL.endswith(".py"): MTUOCtokenizerTL=MTUOCtokenizerTL+".py"
-
-    spec = importlib.util.spec_from_file_location('', MTUOCtokenizerTL)
-    tokenizerTLmod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tokenizerTLmod)
-    tokenizerTL=tokenizerTLmod.Tokenizer()
-    
+    if MTUOCtokenizerSL:
+        if not MTUOCtokenizerTL.endswith(".py"): MTUOCtokenizerTL=MTUOCtokenizerTL+".py"
+        spec = importlib.util.spec_from_file_location('', MTUOCtokenizerTL)
+        tokenizerTLmod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tokenizerTLmod)
+        tokenizerTL=tokenizerTLmod.Tokenizer()
+    else:
+        tokenizerTL=None
+        
     from MTUOC_tags import TagRestorer
     tagrestorer=TagRestorer()
     
@@ -452,7 +487,11 @@ if MTUOCServer_type=="MTUOC":
 elif MTUOCServer_type=="OpenNMT":
     from flask import Flask, jsonify, request
     MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
+    STATUS_ERROR = "error"
+    print("MTUOC server started as OpenNMT server")
     STATUS_ERROR = "error"
     out={}
     def start(url_root="./translator",
@@ -497,8 +536,11 @@ elif MTUOCServer_type=="OpenNMT":
 
 elif MTUOCServer_type=="NMTWizard":
     from flask import Flask, jsonify, request
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
     STATUS_ERROR = "error"
+    print("MTUOC server started as NMTWizard server")
     out={}
     def start(url_root="",
               host="0.0.0.0",
@@ -533,8 +575,11 @@ elif MTUOCServer_type=="NMTWizard":
     
 elif MTUOCServer_type=="ModernMT":
     from flask import Flask, jsonify, request
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
     STATUS_ERROR = "error"
+    print("MTUOC server started as ModernMT server")
     def start(
               url_root="",
               host="",
@@ -573,7 +618,7 @@ elif MTUOCServer_type=="Moses":
     # Start the server
     try:
         ip=get_IP_info()
-        print("Moses server IP:",ip," port:",MTUOCServer_port)
+        print("MTUOC server started as Moses server IP:",ip," port:",MTUOCServer_port)
         print('Use Control-C to exit')
         server.serve_forever()
     except KeyboardInterrupt:

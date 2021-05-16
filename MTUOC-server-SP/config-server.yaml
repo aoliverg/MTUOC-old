@@ -11,13 +11,15 @@ MTEngine:
     
 MTUOCServer:
   port: 8000
-  type: MTUOC
+  type: Moses
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   verbosity_level: 3
   log_file: None
   #log file path and name or None
   #0: no verbosity; higher more detailed
   restore_tags: True
+  strictTagRestoration: True
+  #if true, verifies that all tags are in the target, otherwise returns translation without tags
   restore_case: True
   URLs: True
   EMAILs: True
