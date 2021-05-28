@@ -8,13 +8,14 @@ MTEngine:
     
 MTUOCServer:
   port: 8000
-  type: MTUOC
+  type: ModernMT
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   verbose: True
   restore_tags: True
   restore_case: True
   URLs: True
   EMAILs: True
+  add_trailing_space: True
   
   ONMT_url_root: "/translator"
   #specific configuration when acting as ONMT server
@@ -24,7 +25,6 @@ Preprocess:
   tl_lang: es
   sl_tokenizer: MTUOC_tokenizer_eng.py
   tl_tokenizer: MTUOC_tokenizer_spa.py
-  sp_vocabulary_SL: vocab_file.en
   tcmodel: tc.en
   
 
