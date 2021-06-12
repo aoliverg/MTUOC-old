@@ -57,7 +57,7 @@ HYPENS = ('\u2010','\u2011','\u2012','\u2013')
 
 class Tokenizer():
     def __init__(self):
-        self.specialchars=["«","»","—","‘","’","“","”","„",]
+        self.specialchars=["«","»","—","‘","’","“","”","„","¿","¡"]
         self.subs=["d'￭","￭'en","￭'hi","￭'ho","￭'l","l'￭","￭'ls","￭'m","m'￭","￭'n","n'￭","￭'ns","￭'s","s'￭","￭'t","t'￭","￭-el","￭-els","￭-em","￭-en","￭-ens","￭-hi","￭-ho","￭-l","￭-la","￭-les","￭-li","￭-lo","￭-los","￭-m","￭-me","￭-n","￭-ne","￭-nos","￭-s","￭-se","￭-te","￭-t","￭-us","￭-vos"]
         self.re_num = re.compile(r'[\d\,\.]+')
 
