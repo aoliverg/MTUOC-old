@@ -1,7 +1,0 @@
-SL: en
-TL: es
-server_type: MTUOC
-#one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
-port: 8010
-
-ONMT_url_root: /translator
