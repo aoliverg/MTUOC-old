@@ -1,0 +1,8 @@
+SL: en
+TL: ca
+GPU: True
+server_type: MTUOC
+#one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
+port: 8000
+
+ONMT_url_root: /translator
