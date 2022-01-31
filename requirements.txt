@@ -1,10 +1,1 @@
 jieba
-requests
-sentencepiece
-subword_nmt
-nltk
-lxml
-Flask
-PyYAML
-SimpleWebSocketServer
-websocket_client
