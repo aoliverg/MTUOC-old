@@ -1,0 +1,95 @@
+MTUOC: /MTUOC
+
+preprocess_type: sentencepiece
+#one of smt sentencepiece subwordnmt
+
+corpusSPE: ECB10K-eng-spa.txt
+corpusGEN: UNPC100K-eng-spa.txt.gz 
+corpus_GEN_SEL_LINES: 10000
+corpus_GEN_MAX_READ: 5000000
+keep_scored_corpus_GEN: True
+from_scored_corpus_GEN: False
+scored_corpus_GEN_name: UNPC-scored-eng-spa.txt
+valsize: 1000
+evalsize: 1000
+SLcode3: eng
+SLcode2: en
+TLcode3: spa
+TLcode2: es
+SL_DICT: /MTUOC/eng.dict
+TL_DICT: /MTUOC/spa.dict
+#state None or null.dict if not word form dictionary available for that languages
+SL_TOKENIZER: MTUOC_tokenizer_eng
+TL_TOKENIZER: MTUOC_tokenizer_spa
+
+###PREPARATION
+REPLACE_EMAILS: True
+EMAIL_CODE: "@EMAIL@"
+REPLACE_URLS: True
+URL_CODE: "@URL@"
+
+TRAIN_SL_TRUECASER: True
+TRUECASE_SL: True
+SL_TC_MODEL: auto
+#if auto the name will be tc.+SLcode2
+
+TRAIN_TL_TRUECASER: True
+TRUECASE_TL: True
+TL_TC_MODEL: auto
+#if auto the name will be tc.+TLcode2
+
+CLEAN: True
+MIN_TOK: 1
+MAX_TOK: 80
+
+MIN_CHAR: 1
+MAX_CHAR: 1000
+
+#SENTENCE PIECE and SUBWORD NMT
+bos: <s>
+#<s> or None
+eos: </s>
+#</s> or None
+JOIN_LANGUAGES: True
+SPLIT_DIGITS: True
+VOCABULARY_THRESHOLD: 50
+
+#SENTENCE PIECE
+CONTROL_SYMBOLS: ""
+USER_DEFINED_SYMBOLS: ""
+SP_MODEL_PREFIX: spmodel
+MODEL_TYPE: bpe
+#one of unigram, bpe, char, word
+VOCAB_SIZE: 32000
+CHARACTER_COVERAGE: 1.0
+CHARACTER_COVERAGE_SL: 1.0
+CHARACTER_COVERAGE_TL: 1.0
+INPUT_SENTENCE_SIZE: 5000000
+
+#SUBWORD NMT
+LEARN_BPE: True
+JOINER: "@@"
+#use one of ￭ or @@
+NUM_OPERATIONS: 85000
+APPLY_BPE: True
+BPE_DROPOUT: True
+BPE_DROPOUT_P: 0.1
+
+#GUIDED ALIGNMENT
+#TRAIN CORPUS
+GUIDED_ALIGNMENT: True
+ALIGNER: eflomal
+#one of eflomal, fast_align
+DELETE_EXISTING: True
+SPLIT_LIMIT: 1000000
+#For efomal, max number of segments to align at a time
+
+#VALID CORPUS
+GUIDED_ALIGNMENT_VALID: True
+ALIGNER_VALID: eflomal
+#one of eflomal, fast_align
+DELETE_EXISTING_VALID: True
+
+VERBOSE: True
+LOG_FILE: process.log
+DELETE_TEMP: True
