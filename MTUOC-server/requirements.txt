@@ -1,0 +1,9 @@
+sentencepiece
+lxml
+dicttoxml
+requests
+subword_nmt
+Flask
+PyYAML
+SimpleWebSocketServer
+websocket_client
