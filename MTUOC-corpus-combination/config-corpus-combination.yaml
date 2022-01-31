@@ -3,8 +3,8 @@ MTUOC: /MTUOC
 preprocess_type: sentencepiece
 #one of smt sentencepiece subwordnmt
 
-corpusSPE: ECB10K-eng-spa.txt
-corpusGEN: UNPC100K-eng-spa.txt.gz 
+corpusSPE: corpus-eng-spa.txt
+corpusGEN: general_corpus-eng-spa.txt.gz 
 corpus_GEN_SEL_LINES: 10000
 corpus_GEN_MAX_READ: 5000000
 keep_scored_corpus_GEN: True
