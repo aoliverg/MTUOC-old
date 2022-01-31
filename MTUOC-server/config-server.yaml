@@ -1,0 +1,77 @@
+MTEngine:
+    MTengine: Marian
+    #one of Marian, OpenNMT, Moses
+    startMTEngine: True
+    startCommand: "./marian-server -m model.npz -v vocab-en.yml vocab-es.yml -p 8085 --n-best --alignment hard  --normalize 1 --quiet &"
+    #startCommand: "onmt_server --ip localhost --port 8085 --url_root /translator --config config.json"
+    #startCommand: "./moses -f moses.ini --server --server-port 8085 --print-alignment-info&"
+    #add --quiet if you don't want to see log from Marian
+    IP: localhost
+    port: 8085
+    #The port is needed for MTUOC-stop-server.py
+    min_len_factor: 0.5
+    #for Marian to avoid very short translations
+    
+MTUOCServer:
+  port: 8005
+  type: MTUOC
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard, Lucy, OpusMT
+  verbosity_level: 3
+  log_file: None
+  #log file path and name or None
+  #0: no verbosity; higher more detailed
+  restore_tags: True
+  restore_strategy: eflomal
+  #one of mtengine, eflomal
+  alimodel: MTUOC-CCMatrix-eng-spa
+  #model prefix or None
+  strictTagRestoration: True
+  #if true, verifies that all tags are in the target, otherwise returns translation without tags
+  restore_case: True
+  URLs: True
+  EMAILs: True
+  add_trailing_space: True
+  unescape_html: True
+  ONMT_url_root: "/translator"
+  #specific configuration when acting as ONMT server
+
+Preprocess:
+  sl_lang: en
+  tl_lang: es
+  sl_tokenizer: MTUOC_tokenizer_eng.py
+  #None if no tokenization for source language
+  tl_tokenizer: MTUOC_tokenizer_spa.py
+  #None if no tokenization for target language
+  #Truecasing
+  tcmodel: tc.en
+  #or None if not used
+  ###SentencePiece###
+  sentencepiece: True
+  sp_model_SL: spmodel.model
+  sp_vocabulary_SL: vocab_file.es
+  sp_splitter: "▁"
+  
+  #BPE subword-nmt
+  BPE: False
+  #True or False: if sentencepiece is set to True, sentencepiece will be used
+  bpecodes: codes_file
+  bpe_joiner: "@@"
+
+  
+  #or None if not used
+  ###################
+  bos_annotate: <s>
+  #None or <s> (or other)
+  eos_annotate: </s>
+  #None or </s> (or other)
+
+  finaldetokenization: True
+  #one of True False
+
+change_list: None 
+# None or list of files separated by ; error_correction.txt;translated_names.txt
+
+#Lucy server options
+Lucy:
+    TRANSLATION_DIRECTION: ENGLISH-SPANISH
+    USER: traductor
