@@ -1,0 +1,19 @@
+MTUOC: /MTUOC
+Marian_dir: ./Marian
+MTUOC_server_dir: ./MTUOC-server
+Corpus_dir: ./corpus-dir
+Training_dir: ./training-dir
+
+Final_TA_engine_dir: ./MTUOC-engine-eng-spa
+
+
+SLcode3: eng
+SLcode2: en
+TLcode3: spa
+TLcode2: es
+
+CPU_GPU: CPU
+
+mt_engine_port: 8050
+server_port: 8000
+server_type: MTUOC
