@@ -3,7 +3,7 @@ MTUOC: /MTUOC
 preprocess_type: sentencepiece
 #one of smt sentencepiece subwordnmt
 
-corpus: ECB-eng-spa.txt
+corpus: corpus-eng-spa.txt
 valsize: 5000
 evalsize: 5000
 SLcode3: eng
@@ -16,7 +16,7 @@ TL_DICT: /MTUOC/spa.dict
 #state None or null.dict if not word form dictionary available for that languages
 
 SL_TOKENIZER: MTUOC_tokenizer_eng.py
-TL_TOKENIZER: MTUOC_tokenizer_eng.py
+TL_TOKENIZER: MTUOC_tokenizer_spa.py
 
 ###PREPARATION
 REPLACE_EMAILS: True
@@ -61,7 +61,7 @@ USER_DEFINED_SYMBOLS: ""
 SP_MODEL_PREFIX: spmodel
 MODEL_TYPE: bpe
 #one of unigram, bpe, char, word
-VOCAB_SIZE: 32000
+VOCAB_SIZE: 64000
 CHARACTER_COVERAGE: 1.0
 CHARACTER_COVERAGE_SL: 1.0
 CHARACTER_COVERAGE_TL: 1.0
