@@ -45,7 +45,7 @@ def guided_alignment_fast_align(MTUOC="/MTUOC",ROOTNAME_ALI="train.sp",ROOTNAME_
     
     '''
     if VERBOSE: print("Checking guided alignment")
-    check_guided_alignment(FILE1,FILE2,ROOTNAME_OUT+"."+SL+"."+TL+".align",ROOTNAME_OUT+"."+TL+"."+SL+".align")
+    check_guided_alignment(FILE1,FILE2,ROOTNAME_OUT+"."+SL+"."+TL+".align","todelete.align")
     listfiles = os.listdir(".")
     try:
         os.remove(FILEOUT)
